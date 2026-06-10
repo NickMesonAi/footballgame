@@ -950,6 +950,100 @@ h1, h2, h3 { font-family: 'Rajdhani', sans-serif; letter-spacing: 0.02em; }
 .text-blue { color: var(--accent-blue); }
 .text-muted { color: var(--text-muted); }
 
+/* ── BENCH SWAP UI ── */
+.bench-player-row {
+  display: flex; align-items: center; gap: 10px;
+  padding: 7px 10px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  font-size: 0.8rem;
+}
+.bench-rating {
+  font-family: 'Rajdhani', sans-serif; font-weight: 700;
+  font-size: 1rem; min-width: 28px;
+}
+.bench-name { flex: 1; color: var(--text-primary); font-weight: 500; }
+.bench-pos {
+  font-size: 0.68rem; font-weight: 600; letter-spacing: 0.06em;
+  color: var(--text-muted); min-width: 28px; text-align: center;
+}
+.bench-tier { font-size: 0.65rem; font-weight: 600; min-width: 60px; text-align: right; }
+.btn-swap {
+  font-family: 'Rajdhani', sans-serif; font-weight: 700;
+  font-size: 0.72rem; letter-spacing: 0.08em; text-transform: uppercase;
+  padding: 5px 12px; border-radius: var(--radius-sm);
+  background: rgba(0,180,255,0.08); border: 1px solid rgba(0,180,255,0.25);
+  color: var(--accent-blue); cursor: pointer; transition: all 0.15s;
+}
+.btn-swap:hover { background: rgba(0,180,255,0.18); border-color: var(--accent-blue); }
+.btn-swap-starter {
+  display: flex; align-items: center; gap: 10px;
+  width: 100%; padding: 8px 12px; text-align: left;
+  background: var(--bg-surface); border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm); color: var(--text-primary);
+  cursor: pointer; font-size: 0.8rem; transition: all 0.15s;
+}
+.btn-swap-starter:hover { border-color: var(--accent-gold); background: rgba(240,192,64,0.05); }
+
+/* ── TACTICAL MOMENT ── */
+.tactical-moment {
+  background: var(--bg-elevated);
+  border: 2px solid var(--accent-gold);
+  border-radius: var(--radius-lg);
+  padding: 20px 22px;
+  animation: momentIn 0.35s cubic-bezier(0.175,0.885,0.32,1.275) forwards;
+}
+@keyframes momentIn {
+  from { opacity:0; transform: scale(0.95) translateY(10px); }
+  to   { opacity:1; transform: scale(1) translateY(0); }
+}
+.tactical-moment-header {
+  display: flex; align-items: center; gap: 10px; margin-bottom: 10px;
+}
+.tactical-moment-badge {
+  font-size: 0.62rem; font-weight: 700; letter-spacing: 0.12em;
+  text-transform: uppercase; padding: 3px 10px;
+  background: rgba(240,192,64,0.12); border: 1px solid rgba(240,192,64,0.3);
+  border-radius: 10px; color: var(--accent-gold);
+}
+.tactical-moment-min {
+  font-family: 'Rajdhani', sans-serif; font-size: 1rem; font-weight: 700;
+  color: var(--accent-gold);
+}
+.tactical-moment-title {
+  font-size: 1.1rem; font-weight: 700; color: var(--text-primary);
+  margin-bottom: 6px;
+}
+.tactical-moment-desc {
+  font-size: 0.83rem; color: var(--text-secondary);
+  margin-bottom: 16px; line-height: 1.5;
+}
+.choice-buttons {
+  display: flex; gap: 8px; flex-wrap: wrap;
+}
+.btn-choice {
+  flex: 1; min-width: 120px;
+  padding: 10px 14px; border-radius: var(--radius-md);
+  background: var(--bg-surface); border: 1px solid var(--border-subtle);
+  color: var(--text-primary); cursor: pointer;
+  font-family: 'Inter', sans-serif; font-size: 0.8rem;
+  text-align: left; transition: all 0.15s;
+  display: flex; flex-direction: column; gap: 3px;
+}
+.btn-choice:hover { border-color: var(--accent-blue); background: rgba(0,180,255,0.06); }
+.btn-choice-title { font-weight: 600; font-size: 0.82rem; }
+.btn-choice-desc { font-size: 0.7rem; color: var(--text-muted); }
+.choice-result {
+  margin-top: 12px; padding: 10px 14px;
+  border-radius: var(--radius-sm); font-size: 0.85rem;
+  font-weight: 500; text-align: center;
+  animation: eventIn 0.3s ease forwards;
+}
+.choice-result.good { background: rgba(34,197,94,0.1); color: #22c55e; border: 1px solid rgba(34,197,94,0.2); }
+.choice-result.bad  { background: rgba(239,68,68,0.1); color: #ef4444; border: 1px solid rgba(239,68,68,0.2); }
+.choice-result.neutral { background: rgba(255,255,255,0.04); color: var(--text-secondary); border: 1px solid var(--border-subtle); }
+
 /* responsive */
 @media (max-width: 768px) {
   .draft-layout {
@@ -1119,6 +1213,7 @@ h1, h2, h3 { font-family: 'Rajdhani', sans-serif; letter-spacing: 0.02em; }
       </div>
     </div>
   </div>
+  <div id="bench-panel" style="width:100%;max-width:900px;background:var(--bg-card);border:1px solid var(--border-subtle);border-radius:var(--radius-md);padding:16px 18px;"></div>
   <div class="summary-actions">
     <button class="btn btn-gold btn-lg" onclick="startTournament()">
       Enter Super League →
@@ -1192,6 +1287,9 @@ const STATE = {
   slots: [],           // ordered slot config [{key, posType, label, left, top}]
   draftedIds: new Set(),
   squad: {},           // {slotKey: playerObj}
+  bench: [],           // array of 6 playerObj
+  benchDraftIndex: 0,  // 0-5 during bench draft
+  draftPhase: 'xi',    // 'xi' | 'bench'
   teamRatings: {},
   activeDraftSlot: null,
   tournament: {
@@ -1360,6 +1458,9 @@ function startDraft(formationKey) {
   STATE.slots = FORMATIONS[formationKey].slots;
   STATE.draftedIds = new Set();
   STATE.squad = {};
+  STATE.bench = [];
+  STATE.benchDraftIndex = 0;
+  STATE.draftPhase = 'xi';
   STATE.activeDraftSlot = null;
   renderDraftPitch();
   showScreen('draft');
@@ -1431,9 +1532,35 @@ function getCardsForPosition(posType, excludeIds) {
     if (excludeIds.has(p.id)) return false;
     return isEligible(p, posType);
   });
-  // pure shuffle — no balancing whatsoever
-  shuffle(eligible);
-  return eligible.slice(0, 6);
+  return stratifiedSample(eligible, 6);
+}
+
+// Weighted sample: Legends rare, Backup players common — creates real draft variance
+function stratifiedSample(pool, n) {
+  const tierW = { Legend:10, Elite:22, Starter:40, Rotation:45, Squad:35, Backup:28 };
+  // Build weighted pool
+  const weighted = [];
+  pool.forEach(p => {
+    const w = tierW[p.tier] || 30;
+    for (let i = 0; i < w; i++) weighted.push(p);
+  });
+  shuffle(weighted);
+  // Pick n unique players from weighted pool
+  const seen = new Set();
+  const result = [];
+  for (let i = 0; i < weighted.length && result.length < n; i++) {
+    if (!seen.has(weighted[i].id)) {
+      seen.add(weighted[i].id);
+      result.push(weighted[i]);
+    }
+  }
+  // Fill any remaining slots from unweighted pool if needed
+  if (result.length < n) {
+    const remaining = pool.filter(p => !seen.has(p.id));
+    shuffle(remaining);
+    result.push(...remaining.slice(0, n - result.length));
+  }
+  return result;
 }
 
 function isEligible(player, posType) {
@@ -1478,14 +1605,28 @@ function renderDraftCards(cards, slotKey) {
 }
 
 function selectPlayer(player, slotKey, cardEl) {
-  // mark card selected
   cardEl.classList.add('selected');
-  // store
-  STATE.squad[slotKey] = player;
   STATE.draftedIds.add(player.id);
 
+  if (slotKey === '__bench__') {
+    // Bench pick
+    STATE.bench.push(player);
+    setTimeout(() => {
+      STATE.benchDraftIndex++;
+      document.getElementById('cards-grid').innerHTML = '';
+      updateBenchDisplay();
+      if (STATE.benchDraftIndex >= 6) {
+        completeBenchDraft();
+      } else {
+        startBenchDraft();
+      }
+    }, 400);
+    return;
+  }
+
+  // Starting XI pick
+  STATE.squad[slotKey] = player;
   setTimeout(() => {
-    // update pitch slot
     const slotEl = document.getElementById('slot-' + slotKey);
     if (slotEl) {
       slotEl.className = 'pitch-slot pitch-slot-filled' +
@@ -1501,11 +1642,33 @@ function selectPlayer(player, slotKey, cardEl) {
     document.getElementById('draft-pos-title').textContent = 'Select next position';
     document.getElementById('draft-pos-subtitle').textContent = 'Click an empty slot on the pitch';
 
-    // check if all filled
     if (Object.keys(STATE.squad).length === STATE.slots.length) {
       completeDraft();
     }
   }, 400);
+}
+
+function updateBenchDisplay() {
+  // Show drafted bench players below pitch panel
+  let benchEl = document.getElementById('bench-display');
+  if (!benchEl) {
+    benchEl = document.createElement('div');
+    benchEl.id = 'bench-display';
+    benchEl.style.cssText = 'padding:10px 4px 0;';
+    document.querySelector('.draft-pitch-panel').appendChild(benchEl);
+  }
+  benchEl.innerHTML = `
+    <div style="font-size:0.65rem;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:var(--text-muted);margin-bottom:6px;">Bench (${STATE.bench.length}/6)</div>
+    <div style="display:flex;flex-direction:column;gap:4px;">
+      ${STATE.bench.map(p => `
+        <div style="display:flex;align-items:center;gap:8px;padding:4px 8px;background:var(--bg-elevated);border-radius:4px;border:1px solid var(--border-subtle);">
+          <span style="font-family:Rajdhani,sans-serif;font-weight:700;font-size:0.85rem;color:${TIER_COLORS[p.tier]}">${p.rating}</span>
+          <span style="font-size:0.72rem;color:var(--text-primary);flex:1;">${p.name}</span>
+          <span style="font-size:0.62rem;color:var(--text-muted);">${p.position}</span>
+        </div>
+      `).join('')}
+    </div>
+  `;
 }
 
 function updateDraftProgress() {
@@ -1514,11 +1677,40 @@ function updateDraftProgress() {
 }
 
 function completeDraft() {
+  // XI done — move to bench draft
+  STATE.draftPhase = 'bench';
+  STATE.benchDraftIndex = 0;
+  STATE.activeDraftSlot = null;
+  setTimeout(() => startBenchDraft(), 400);
+}
+
+function startBenchDraft() {
+  document.getElementById('draft-pos-title').textContent = 'Pick Your Bench';
+  document.getElementById('draft-pos-subtitle').textContent = `Sub ${STATE.benchDraftIndex + 1} of 6 — pick any player`;
+  document.getElementById('draft-instruction').style.display = 'none';
+  document.getElementById('draft-progress').textContent = `SUB ${STATE.benchDraftIndex + 1} / 6`;
+  // deactivate pitch slots
+  document.querySelectorAll('.pitch-slot-active').forEach(el => {
+    el.className = 'pitch-slot pitch-slot-empty';
+  });
+  renderBenchCards();
+}
+
+function renderBenchCards() {
+  // Show 6 random cards of any position for bench
+  const allPositions = ['GK','CB','LB','RB','CDM','CM','CAM','LW','RW','ST'];
+  // Pick a random posType to sample from, weighted toward field players
+  const pool = PLAYERS.filter(p => !STATE.draftedIds.has(p.id));
+  const cards = stratifiedSample(pool, 6);
+  renderDraftCards(cards, '__bench__');
+}
+
+function completeBenchDraft() {
   STATE.teamRatings = calculateTeamRatings(STATE.squad, STATE.slots);
   setTimeout(() => {
     renderTeamSummary();
     showScreen('summary');
-  }, 600);
+  }, 400);
 }
 
 /* ═══════════════════════════════════════════
@@ -1614,6 +1806,77 @@ function renderTeamSummary() {
       <div class="summary-meta-value">${weakest.label} (${weakest.val})</div>
     </div>
   `;
+
+  renderBenchPanel();
+}
+
+function renderBenchPanel() {
+  let benchPanel = document.getElementById('bench-panel');
+  if (!benchPanel) return;
+  if (!STATE.bench || STATE.bench.length === 0) { benchPanel.innerHTML = ''; return; }
+
+  benchPanel.innerHTML = `
+    <div class="section-title" style="margin-bottom:10px;">Bench — click to swap into starting XI</div>
+    <div id="bench-list" style="display:flex;flex-direction:column;gap:6px;">
+      ${STATE.bench.map((p, i) => `
+        <div class="bench-player-row" id="bench-row-${i}">
+          <span class="bench-rating" style="color:${TIER_COLORS[p.tier]}">${p.rating}</span>
+          <span class="bench-name">${p.name}</span>
+          <span class="bench-pos">${p.position}</span>
+          <span class="bench-tier" style="color:${TIER_COLORS[p.tier]}">${p.tier}</span>
+          <button class="btn-swap" onclick="initSwap(${i})">Swap In</button>
+        </div>
+      `).join('')}
+    </div>
+    <div id="swap-picker" style="display:none;margin-top:12px;"></div>
+  `;
+}
+
+function initSwap(benchIdx) {
+  const benchPlayer = STATE.bench[benchIdx];
+  // Highlight compatible starting slots
+  const picker = document.getElementById('swap-picker');
+  const entries = Object.entries(STATE.squad);
+  picker.style.display = 'block';
+  picker.innerHTML = `
+    <div style="font-size:0.8rem;color:var(--text-secondary);margin-bottom:8px;">
+      Swap <strong style="color:var(--accent-gold)">${benchPlayer.name}</strong> (${benchPlayer.position}) with which starter?
+    </div>
+    <div style="display:flex;flex-direction:column;gap:5px;">
+      ${entries.map(([key, p]) => `
+        <button class="btn-swap-starter" onclick="confirmSwap(${benchIdx},'${key}')">
+          <span style="font-family:Rajdhani,sans-serif;font-weight:700;color:${TIER_COLORS[p.tier]}">${p.rating}</span>
+          <span>${p.name}</span>
+          <span style="color:var(--text-muted);font-size:0.72rem;">${p.position} → ${key}</span>
+        </button>
+      `).join('')}
+    </div>
+    <button class="btn-ghost" style="font-size:0.75rem;padding:6px 14px;margin-top:8px;" onclick="cancelSwap()">Cancel</button>
+  `;
+}
+
+function confirmSwap(benchIdx, slotKey) {
+  const benchPlayer = STATE.bench[benchIdx];
+  const starterPlayer = STATE.squad[slotKey];
+  STATE.squad[slotKey] = benchPlayer;
+  STATE.bench[benchIdx] = starterPlayer;
+  // Recalculate ratings
+  STATE.teamRatings = calculateTeamRatings(STATE.squad, STATE.slots);
+  document.getElementById('rating-overall').textContent = STATE.teamRatings.overall;
+  renderSummaryPitch();
+  renderBenchPanel();
+  cancelSwap();
+  // Update bars
+  const bars = ['attack','midfield','defence','goalkeeper'];
+  bars.forEach(b => {
+    const fill = document.querySelector(`.rating-bar-fill[data-target]`);
+  });
+  renderTeamSummary();
+}
+
+function cancelSwap() {
+  const picker = document.getElementById('swap-picker');
+  if (picker) picker.style.display = 'none';
 }
 
 function renderSummaryPitch() {
@@ -1673,13 +1936,149 @@ function updateTournamentHeader() {
   document.getElementById('t-l').textContent = t.losses;
 }
 
+/* ═══════════════════════════════════════════
+   TACTICAL MOMENTS DATA
+═══════════════════════════════════════════ */
+const TACTICAL_MOMENTS = {
+  defensive_crisis: {
+    title: '🚨 Defensive Crisis!',
+    desc: (opp) => `Your defence is being torn apart. ${opp.name} are cutting through you on the left side.`,
+    condition: (r, homeScore, awayScore) => r.defence < 76 || awayScore > homeScore,
+    options: [
+      { title:'Bring on a sub', desc:'Sacrifice attack for solidity', uMod:0.85, oMod:0.68, outcome:'Your defence stabilises. The tide turns.', type:'good' },
+      { title:'Switch to 5 at the back', desc:'Ultra defensive — sacrifice creativity', uMod:0.72, oMod:0.58, outcome:'Compact but sterile. You barely breathe.', type:'neutral' },
+      { title:'Keep faith — tell him to switch on', desc:'High risk. Could go either way', uModFn:()=>1.0, oModFn:()=>Math.random()<0.5?0.72:1.25, outcomeFn:(oMod)=>oMod<1?'He responds. Solidity restored.':'He gets exposed again. Disaster.', typeFn:(oMod)=>oMod<1?'good':'bad' },
+    ]
+  },
+  penalty_opp: {
+    title: '😬 Penalty to the Opposition!',
+    desc: (opp) => `${opp.name} have won a penalty. Which way do you think they'll go?`,
+    condition: () => true,
+    isPenalty: true,
+    options: [
+      { title:'Guess Left', desc:'Send the keeper left', penaltyDir:'left' },
+      { title:'Guess Right', desc:'Send the keeper right', penaltyDir:'right' },
+      { title:'Down the Middle', desc:'Stand still — risky but brave', penaltyDir:'middle' },
+    ]
+  },
+  penalty_yours: {
+    title: '⚡ Penalty to Your XI!',
+    desc: () => `You have won a penalty. Who steps up?`,
+    condition: () => true,
+    isYourPenalty: true,
+    options: [
+      { title:'Best attacker', desc:'Your highest-rated striker takes it', penaltyChance:0.82 },
+      { title:'Dead ball specialist', desc:'Set piece expert — steady under pressure', penaltyChance:0.77 },
+      { title:'Captain', desc:'The leader steps forward', penaltyChance:0.70 },
+    ]
+  },
+  going_behind: {
+    title: '😤 You\'re Behind — What Now?',
+    desc: (opp) => `${opp.name} lead. Do you take risks or stay disciplined?`,
+    condition: (r, homeScore, awayScore) => awayScore > homeScore,
+    options: [
+      { title:'Push bodies forward', desc:'Attack is the best form of defence', uMod:1.30, oMod:1.18, outcome:'Brave and open. You create chances.', type:'neutral' },
+      { title:'Stay compact, be patient', desc:'Don\'t panic. Defend, then strike', uMod:1.12, oMod:1.00, outcome:'Disciplined. You wait for your moment.', type:'good' },
+      { title:'All-out attack', desc:'Abandon shape. Chaos mode', uMod:1.55, oMod:1.40, outcome:'Wide open. Anything can happen now.', type:'neutral' },
+    ]
+  },
+  holding_lead: {
+    title: '🧊 You\'re Ahead — Hold It!',
+    desc: () => `You have the lead. How do you manage the game?`,
+    condition: (r, homeScore, awayScore) => homeScore > awayScore,
+    options: [
+      { title:'Park the bus', desc:'Deep block, kill the game', uMod:0.70, oMod:0.60, outcome:'Organised and resolute. Clock ticking.', type:'good' },
+      { title:'Keep playing your way', desc:'Don\'t change what\'s working', uMod:1.00, oMod:1.00, outcome:'You stay in control. Business as usual.', type:'neutral' },
+      { title:'Press high, kill it off', desc:'Go for the second goal', uMod:1.20, oMod:1.10, outcome:'Adventurous. Could win big — or concede.', type:'neutral' },
+    ]
+  },
+  star_moment: {
+    title: null, // filled dynamically
+    desc: (opp, player) => `${player.name} has been electric tonight. Do you let him run riot?`,
+    condition: () => Object.values(STATE.squad).some(p => p.tier === 'Legend'),
+    options: [
+      { title:'Unleash him', desc:'Give him licence to do everything', uMod:1.35, oMod:1.00, outcome:'He\'s unstoppable. Pure class.', type:'good' },
+      { title:'Keep it controlled', desc:'Stay structured, use him wisely', uMod:1.10, oMod:0.95, outcome:'He influences the game without burning bridges.', type:'good' },
+      { title:'Switch him to a different area', desc:'Exploit the space on the other side', uMod:1.18, oMod:1.08, outcome:'Clever use of space. They can\'t track him.', type:'neutral' },
+    ]
+  },
+  momentum_shift: {
+    title: '😰 They\'re On Top',
+    desc: (opp) => `${opp.name} are dominating possession and creating chance after chance.`,
+    condition: (r, homeScore, awayScore) => awayScore >= homeScore - 1,
+    options: [
+      { title:'Hold your shape', desc:'Discipline. Trust the system', uMod:0.90, oMod:0.80, outcome:'Resolute defending. You weather the storm.', type:'good' },
+      { title:'Press high and win it back', desc:'Take the game to them', uMod:1.10, oMod:1.15, outcome:'Chaotic but intense. You scramble back.', type:'neutral' },
+      { title:'Sit deeper, soak pressure', desc:'Absorb and hit on the counter', uMod:0.85, oMod:0.70, outcome:'Counter-attacking threat. Tight and tense.', type:'good' },
+    ]
+  },
+  red_card: {
+    title: '🟥 Your Man Is Off!',
+    desc: () => `A red card! You\'re down to 10 men for the rest of the phase.`,
+    condition: () => true,
+    options: [
+      { title:'Reshuffle the defence', desc:'Drop a midfielder to shore up the back', uMod:0.78, oMod:0.75, outcome:'Organised despite being a man down.', type:'good' },
+      { title:'No change — push through', desc:'Play with holes and hope', uMod:0.85, oMod:1.20, outcome:'Brave but exposed. You\'re under the cosh.', type:'bad' },
+      { title:'Sacrifice an attacker', desc:'Pure damage limitation', uMod:0.68, oMod:0.65, outcome:'Defensive but disciplined. Grinding it out.', type:'neutral' },
+    ]
+  }
+};
+
+// Pick 2 tactical moments for the match, context-sensitive
+function selectTacticalMoments(userRatings, opponent) {
+  const allTypes = Object.keys(TACTICAL_MOMENTS);
+  // Always include one from the "always" pool (penalty or momentum)
+  const candidate1 = ['momentum_shift','going_behind','holding_lead','defensive_crisis','star_moment'];
+  const candidate2 = ['penalty_opp','penalty_yours','red_card'];
+  shuffle(candidate1); shuffle(candidate2);
+  return [candidate1[0], candidate2[0]];
+}
+
+function resolveTacticalEffect(moment, optionIdx, currentHome, currentAway) {
+  const opt = moment.options[optionIdx];
+
+  if (moment.isPenalty) {
+    // Direction guess: 1/3 correct = save, 2/3 = goal
+    const dir = opt.penaltyDir;
+    const correct = Math.random() < (dir === 'middle' ? 0.15 : 0.33);
+    return {
+      penaltyResult: correct ? 'save' : 'goal',
+      awayGoal: !correct,
+      uMod: 1.0, oMod: 1.0,
+      outcome: correct ? '🧤 Great save! Your keeper guessed right!' : '⚽ Goal! They scored.',
+      type: correct ? 'good' : 'bad'
+    };
+  }
+
+  if (moment.isYourPenalty) {
+    const scored = Math.random() < opt.penaltyChance;
+    return {
+      homeGoal: scored,
+      uMod: 1.0, oMod: 1.0,
+      outcome: scored ? '⚽ Goal! Penalty scored!' : '😖 Missed! The keeper saved it.',
+      type: scored ? 'good' : 'bad'
+    };
+  }
+
+  // xG modifier option
+  let uMod = opt.uModFn ? opt.uModFn() : opt.uMod;
+  let oMod = opt.oModFn ? opt.oModFn() : opt.oMod;
+  let outcome = opt.outcomeFn ? opt.outcomeFn(oMod) : opt.outcome;
+  let type = opt.typeFn ? opt.typeFn(oMod) : opt.type;
+  return { uMod, oMod, outcome, type };
+}
+
+/* ═══════════════════════════════════════════
+   NEW PHASE-BASED MATCH ENGINE
+═══════════════════════════════════════════ */
+let ACTIVE_MATCH = null;
+
 function showNextMatch() {
   const t = STATE.tournament;
   let opponent;
   if (t.phase === 'league') {
     opponent = t.opponents[t.matchIndex];
   } else {
-    // knockout: pick fresh random from pool
     const remaining = OPPONENT_TEAMS.filter(o =>
       !t.knockoutResults.some(r => r.opponentId === o.id)
     );
@@ -1687,58 +2086,70 @@ function showNextMatch() {
     opponent = remaining[0] || OPPONENT_TEAMS[Math.floor(Math.random() * OPPONENT_TEAMS.length)];
   }
 
-  const result = simulateMatch(STATE.teamRatings, opponent);
-  renderMatchInProgress(result, opponent, () => {
-    // callback after match shown
-    if (t.phase === 'league') {
-      t.leagueResults.push({ ...result, opponentId: opponent.id, opponent });
-      if (result.won) { t.wins++; t.points += 3; }
-      else if (result.drew) { t.draws++; t.points += 1; }
-      else t.losses++;
-      t.gf += result.homeScore;
-      t.ga += result.awayScore;
-      updateTournamentHeader();
+  // Build base xG
+  const userR = STATE.teamRatings;
+  const diff = userR.overall - opponent.overall;
+  let uXG = 1.5, oXG = 1.4;
+  const steps = diff / 5;
+  if (steps > 0) { uXG *= Math.pow(1.12, Math.min(steps,5)); oXG /= Math.pow(1.08, Math.min(steps,5)); }
+  else if (steps < 0) { oXG *= Math.pow(1.12, Math.min(-steps,5)); uXG /= Math.pow(1.08, Math.min(-steps,5)); }
+  const attMod = (userR.attack - opponent.defence) / 100;
+  const defMod = (userR.defence - opponent.attack) / 100;
+  uXG *= (1 + attMod * 0.4); oXG *= (1 - defMod * 0.3);
+  if (userR.goalkeeper < 65) oXG *= 1.10;
+  if (userR.goalkeeper > 85) oXG *= 0.85;
+  uXG = Math.max(0.4, Math.min(uXG, 3.2));
+  oXG = Math.max(0.4, Math.min(oXG, 3.2));
 
-      t.matchIndex++;
-      if (t.matchIndex >= 8) {
-        // end of league phase
-        checkQualification();
-      } else {
+  const momentTypes = selectTacticalMoments(userR, opponent);
+
+  ACTIVE_MATCH = {
+    opponent,
+    baseXG_u: uXG, baseXG_o: oXG,
+    xGMod_u: 1.0, xGMod_o: 1.0,
+    homeScore: 0, awayScore: 0,
+    allEvents: [],
+    phase: 0,  // 0, 1, 2
+    momentTypes,
+    fastForward: false,
+    onComplete: (result) => {
+      if (t.phase === 'league') {
+        t.leagueResults.push({ ...result, opponentId: opponent.id, opponent });
+        if (result.won) { t.wins++; t.points += 3; }
+        else if (result.drew) { t.draws++; t.points += 1; }
+        else t.losses++;
+        t.gf += result.homeScore;
+        t.ga += result.awayScore;
         updateTournamentHeader();
-        showContinueButton(() => showNextMatch());
-      }
-    } else {
-      // knockout
-      t.knockoutResults.push({ ...result, opponentId: opponent.id, opponent });
-      if (result.won || (result.drew && result.penaltyWin)) {
-        // advance
-        const rounds = ['r16','qf','sf','final'];
-        const nextIdx = rounds.indexOf(t.phase) + 1;
-        if (t.phase === 'final') {
-          showContinueButton(() => showWinScreen(result, opponent));
-        } else {
-          t.phase = rounds[nextIdx];
-          updateTournamentHeader();
-          showContinueButton(() => showNextMatch());
-        }
+        t.matchIndex++;
+        if (t.matchIndex >= 8) checkQualification();
+        else { updateTournamentHeader(); showContinueButton(() => showNextMatch()); }
       } else {
-        showContinueButton(() => showLossScreen(result, opponent));
+        t.knockoutResults.push({ ...result, opponentId: opponent.id, opponent });
+        if (result.won || result.penaltyWin) {
+          const rounds = ['r16','qf','sf','final'];
+          if (t.phase === 'final') showContinueButton(() => showWinScreen(result, opponent));
+          else {
+            t.phase = rounds[rounds.indexOf(t.phase) + 1];
+            updateTournamentHeader();
+            showContinueButton(() => showNextMatch());
+          }
+        } else {
+          showContinueButton(() => showLossScreen(result, opponent));
+        }
       }
     }
-  });
+  };
+
+  renderMatchShell(opponent);
+  runMatchPhase();
 }
 
-function renderMatchInProgress(result, opponent, onComplete) {
+function renderMatchShell(opponent) {
   const content = document.getElementById('tournament-content');
   content.innerHTML = '';
-
-  // build match display
   const matchDiv = document.createElement('div');
   matchDiv.className = 'match-display';
-
-  const winCls = result.won ? 'win' : result.drew ? 'draw' : 'loss';
-  const winColor = result.won ? 'var(--win-color)' : result.drew ? 'var(--draw-color)' : 'var(--loss-color)';
-
   matchDiv.innerHTML = `
     <div class="match-teams-bar">
       <div class="match-team home">
@@ -1746,9 +2157,9 @@ function renderMatchInProgress(result, opponent, onComplete) {
         <div class="match-team-rating">OVR ${STATE.teamRatings.overall}</div>
       </div>
       <div class="match-score">
-        <div class="match-score-num" id="score-home" style="color:${result.won?'var(--win-color)':result.lost?'var(--loss-color)':'var(--text-primary)'}">0</div>
+        <div class="match-score-num" id="score-home">0</div>
         <div class="match-score-sep">–</div>
-        <div class="match-score-num" id="score-away" style="color:${result.lost?'var(--win-color)':result.won?'var(--loss-color)':'var(--text-primary)'}">0</div>
+        <div class="match-score-num" id="score-away">0</div>
       </div>
       <div class="match-team away">
         <div class="match-team-name">${opponent.name}</div>
@@ -1760,76 +2171,339 @@ function renderMatchInProgress(result, opponent, onComplete) {
   `;
   content.appendChild(matchDiv);
 
-  // fast-forward button
-  let ffUsed = false;
   const ffBtn = document.createElement('button');
   ffBtn.className = 'btn-ff';
+  ffBtn.id = 'ff-btn';
   ffBtn.textContent = '⏩ Fast Forward';
-  ffBtn.onclick = () => { ffUsed = true; revealAllInstant(result, opponent, onComplete); ffBtn.remove(); };
+  ffBtn.onclick = () => {
+    ACTIVE_MATCH.fastForward = true;
+    clearEventTimers();
+    ffBtn.remove();
+    fastForwardMatch();
+  };
   content.appendChild(ffBtn);
+}
 
-  // stagger events
-  revealEventsSequentially(result, opponent, () => {
-    if (!ffUsed) {
-      ffBtn.remove();
-      onComplete();
+// Phase minutes: [1-35], [36-65], [66-90]
+const PHASE_RANGES = [[1,35],[36,65],[66,90]];
+const PHASE_XG_SPLIT = [0.35, 0.35, 0.30];
+
+function runMatchPhase() {
+  const m = ACTIVE_MATCH;
+  if (m.fastForward) return;
+  const phaseIdx = m.phase;
+  const [minStart, minEnd] = PHASE_RANGES[phaseIdx];
+  const xgFrac = PHASE_XG_SPLIT[phaseIdx];
+
+  // Generate goals for this phase
+  const phaseXG_u = m.baseXG_u * xgFrac * m.xGMod_u;
+  const phaseXG_o = m.baseXG_o * xgFrac * m.xGMod_o;
+
+  let phaseHome = poissonRandom(phaseXG_u);
+  let phaseAway = poissonRandom(phaseXG_o);
+  phaseHome = Math.min(phaseHome, 4);
+  phaseAway = Math.min(phaseAway, 4);
+
+  // Star moment bonus (phase 3 only, 8% chance)
+  const legends = Object.values(STATE.squad).filter(p => p.tier === 'Legend');
+  if (phaseIdx === 2 && legends.length > 0 && Math.random() < 0.08) phaseHome++;
+
+  // Generate events for this phase
+  const phaseEvents = generatePhaseEvents(phaseHome, phaseAway, m.opponent, minStart, minEnd);
+  m.allEvents.push(...phaseEvents);
+  m.homeScore += phaseHome;
+  m.awayScore += phaseAway;
+
+  // Reveal events, then either show tactical moment or end match
+  revealPhaseEvents(phaseEvents, m.homeScore, m.awayScore, () => {
+    m.phase++;
+    if (m.phase < 3) {
+      // Show tactical moment between phases
+      showTacticalMoment(m.momentTypes[m.phase - 1], m.homeScore, m.awayScore, () => {
+        runMatchPhase();
+      });
+    } else {
+      finishMatch();
     }
   });
+}
+
+function generatePhaseEvents(homeGoals, awayGoals, opponent, minStart, minEnd) {
+  const events = [];
+  const usedMins = new Set();
+  const myPlayers = Object.values(STATE.squad);
+  const attPos = ['ST','CF','LW','RW','CAM'];
+  const midPos = ['CM','CDM','CAM','LM','RM'];
+  const defPos = ['CB','LB','RB','LWB','RWB'];
+
+  function rMin() {
+    let m;
+    do { m = minStart + Math.floor(Math.random() * (minEnd - minStart + 1)); }
+    while (usedMins.has(m));
+    usedMins.add(m); return m;
+  }
+  function pickScorer() {
+    const att = myPlayers.filter(p => attPos.includes(p.position));
+    const mid = myPlayers.filter(p => midPos.includes(p.position));
+    const def = myPlayers.filter(p => defPos.includes(p.position));
+    const r = Math.random();
+    if (r < 0.60 && att.length) return att[Math.floor(Math.random()*att.length)];
+    if (r < 0.90 && mid.length) return mid[Math.floor(Math.random()*mid.length)];
+    return def.length ? def[Math.floor(Math.random()*def.length)] : myPlayers[0];
+  }
+
+  for (let i = 0; i < homeGoals; i++) {
+    const scorer = pickScorer();
+    const t = GOAL_TEMPLATES[Math.floor(Math.random()*GOAL_TEMPLATES.length)];
+    events.push({ minute:rMin(), side:'home', type:'goal', text:t.replace('{player}',scorer.name) });
+  }
+  for (let i = 0; i < awayGoals; i++) {
+    const t = OPP_GOAL_TEMPLATES[Math.floor(Math.random()*OPP_GOAL_TEMPLATES.length)];
+    events.push({ minute:rMin(), side:'away', type:'goal', text:t.replace('{team}',opponent.name) });
+  }
+  // 1 atmosphere event per phase
+  const atmos = ATMOSPHERE_TEMPLATES[Math.floor(Math.random()*ATMOSPHERE_TEMPLATES.length)];
+  const rndPlayer = myPlayers[Math.floor(Math.random()*myPlayers.length)];
+  events.push({ minute:rMin(), side:'none', type:'atmos', text:atmos.replace('{player}',rndPlayer.name).replace('{team}',opponent.name) });
+
+  // Star event (35% chance)
+  const legs = myPlayers.filter(p=>p.tier==='Legend');
+  if (legs.length > 0 && Math.random() < 0.35) {
+    const star = legs[Math.floor(Math.random()*legs.length)];
+    const st = STAR_TEMPLATES[Math.floor(Math.random()*STAR_TEMPLATES.length)];
+    events.push({ minute:rMin(), side:'none', type:'star', text:st.replace('{player}',star.name) });
+  }
+
+  events.sort((a,b) => a.minute - b.minute);
+  return events;
 }
 
 let eventTimers = [];
 function clearEventTimers() { eventTimers.forEach(t => clearTimeout(t)); eventTimers = []; }
 
-function revealEventsSequentially(result, opponent, onComplete) {
+function revealPhaseEvents(events, homeTotal, awayTotal, onComplete) {
   clearEventTimers();
   const eventsEl = document.getElementById('match-events');
-  const allEvents = result.events || [];
-  let delay = 400;
-  let homeS = 0, awayS = 0;
+  if (!eventsEl) { onComplete(); return; }
 
-  allEvents.forEach((ev, i) => {
+  // Figure out current score before this phase
+  const prevHome = homeTotal - events.filter(e=>e.side==='home').length;
+  const prevAway = awayTotal - events.filter(e=>e.side==='away').length;
+  let h = prevHome, a = prevAway;
+  let delay = 350;
+
+  events.forEach(ev => {
     const t = setTimeout(() => {
-      if (ev.side === 'home') homeS++;
-      else if (ev.side === 'away') awayS++;
-      document.getElementById('score-home').textContent = homeS;
-      document.getElementById('score-away').textContent = awayS;
+      if (ev.side === 'home') h++;
+      else if (ev.side === 'away') a++;
+      const scoreH = document.getElementById('score-home');
+      const scoreA = document.getElementById('score-away');
+      if (scoreH) scoreH.textContent = h;
+      if (scoreA) scoreA.textContent = a;
       const row = document.createElement('div');
-      row.className = 'match-event' + (ev.type === 'goal' ? ' goal' : ev.type === 'star' ? ' star' : '');
+      row.className = 'match-event' + (ev.type==='goal'?' goal':ev.type==='star'?' star':'');
       row.innerHTML = `<span class="match-event-min">${ev.minute}'</span><span>${ev.text}</span>`;
       eventsEl.appendChild(row);
       eventsEl.scrollTop = eventsEl.scrollHeight;
     }, delay);
     eventTimers.push(t);
-    delay += 450;
+    delay += 420;
   });
 
-  const finalT = setTimeout(() => {
-    const summEl = document.getElementById('match-summary');
-    if (summEl) { summEl.style.display = 'block'; summEl.textContent = result.summary; }
-    onComplete();
-  }, delay + 200);
-  eventTimers.push(finalT);
+  const doneT = setTimeout(onComplete, delay + 150);
+  eventTimers.push(doneT);
 }
 
-function revealAllInstant(result, opponent, onComplete) {
-  clearEventTimers();
-  const eventsEl = document.getElementById('match-events');
-  eventsEl.innerHTML = '';
-  let homeS = 0, awayS = 0;
-  (result.events||[]).forEach(ev => {
-    if (ev.side === 'home') homeS++;
-    else if (ev.side === 'away') awayS++;
-    const row = document.createElement('div');
-    row.className = 'match-event' + (ev.type === 'goal' ? ' goal' : ev.type === 'star' ? ' star' : '');
-    row.innerHTML = `<span class="match-event-min">${ev.minute}'</span><span>${ev.text}</span>`;
-    row.style.animation = 'none'; row.style.opacity = '1';
-    eventsEl.appendChild(row);
-  });
-  document.getElementById('score-home').textContent = result.homeScore;
-  document.getElementById('score-away').textContent = result.awayScore;
+function showTacticalMoment(momentType, homeScore, awayScore, onComplete) {
+  if (ACTIVE_MATCH.fastForward) { onComplete(); return; }
+  const content = document.getElementById('tournament-content');
+  const momentDef = TACTICAL_MOMENTS[momentType];
+  if (!momentDef) { onComplete(); return; }
+
+  // Check if condition is met (use default if not)
+  const opp = ACTIVE_MATCH.opponent;
+  const userR = STATE.teamRatings;
+
+  // Find a star player for star_moment type
+  const legends = Object.values(STATE.squad).filter(p => p.tier === 'Legend');
+  const starPlayer = legends[Math.floor(Math.random()*legends.length)] || Object.values(STATE.squad)[0];
+
+  // Minute is start of the new phase
+  const phaseIdx = ACTIVE_MATCH.phase;
+  const minute = PHASE_RANGES[phaseIdx][0];
+
+  // Dynamic title for star_moment
+  const title = momentType === 'star_moment'
+    ? `⚡ ${starPlayer.name} Is On Fire`
+    : momentDef.title;
+  const desc = momentDef.desc(opp, starPlayer);
+
+  const momentEl = document.createElement('div');
+  momentEl.className = 'tactical-moment';
+  momentEl.id = 'tactical-moment';
+  momentEl.innerHTML = `
+    <div class="tactical-moment-header">
+      <span class="tactical-moment-badge">Tactical Decision</span>
+      <span class="tactical-moment-min">${minute}'</span>
+    </div>
+    <div class="tactical-moment-title">${title}</div>
+    <div class="tactical-moment-desc">${desc}</div>
+    <div class="choice-buttons" id="choice-buttons">
+      ${momentDef.options.map((opt, i) => `
+        <button class="btn-choice" onclick="pickTacticalChoice('${momentType}', ${i}, ${homeScore}, ${awayScore})">
+          <span class="btn-choice-title">${opt.title}</span>
+          <span class="btn-choice-desc">${opt.desc}</span>
+        </button>
+      `).join('')}
+    </div>
+    <div id="choice-result" style="display:none"></div>
+  `;
+  content.appendChild(momentEl);
+
+  // Store callback
+  ACTIVE_MATCH._momentCallback = onComplete;
+}
+
+function pickTacticalChoice(momentType, optionIdx, homeScore, awayScore) {
+  const momentDef = TACTICAL_MOMENTS[momentType];
+  if (!momentDef) return;
+  // Disable buttons
+  document.querySelectorAll('.btn-choice').forEach(b => b.disabled = true);
+
+  const effect = resolveTacticalEffect(momentDef, optionIdx, homeScore, awayScore);
+
+  // Apply modifiers
+  ACTIVE_MATCH.xGMod_u *= effect.uMod || 1;
+  ACTIVE_MATCH.xGMod_o *= effect.oMod || 1;
+
+  // Instant goal events for penalty types
+  let extraHomeGoal = 0, extraAwayGoal = 0;
+  if (effect.homeGoal) {
+    extraHomeGoal = 1;
+    ACTIVE_MATCH.homeScore++;
+    const scoreH = document.getElementById('score-home');
+    if (scoreH) scoreH.textContent = ACTIVE_MATCH.homeScore;
+  }
+  if (effect.awayGoal) {
+    extraAwayGoal = 1;
+    ACTIVE_MATCH.awayScore++;
+    const scoreA = document.getElementById('score-away');
+    if (scoreA) scoreA.textContent = ACTIVE_MATCH.awayScore;
+  }
+
+  // Show outcome
+  const resultEl = document.getElementById('choice-result');
+  if (resultEl) {
+    resultEl.style.display = 'block';
+    resultEl.className = `choice-result ${effect.type}`;
+    resultEl.textContent = effect.outcome;
+  }
+
+  const cb = ACTIVE_MATCH._momentCallback;
+  setTimeout(() => {
+    const momentEl = document.getElementById('tactical-moment');
+    if (momentEl) momentEl.style.opacity = '0';
+    setTimeout(() => {
+      if (momentEl) momentEl.remove();
+      if (cb) cb();
+    }, 300);
+  }, 1400);
+}
+
+function finishMatch() {
+  const m = ACTIVE_MATCH;
+  let homeScore = m.homeScore;
+  let awayScore = m.awayScore;
+
+  // Upset flip (5%)
+  if (Math.random() < 0.05) { const tmp = homeScore; homeScore = awayScore; awayScore = tmp; }
+  homeScore = Math.min(homeScore, 7); awayScore = Math.min(awayScore, 7);
+
+  let won = homeScore > awayScore;
+  let drew = homeScore === awayScore;
+  let lost = homeScore < awayScore;
+  let penaltyWin = false;
+
+  // Knockout draw → extra time
+  if (drew && STATE.tournament.phase !== 'league') {
+    const diff = STATE.teamRatings.overall - m.opponent.overall;
+    const etChance = 0.5 + (diff / 200);
+    if (Math.random() < etChance) { homeScore++; penaltyWin = true; }
+    else { awayScore++; }
+    won = homeScore > awayScore;
+    drew = false;
+    lost = homeScore < awayScore;
+  }
+
+  m.homeScore = homeScore;
+  m.awayScore = awayScore;
+
+  const summary = generateSummary(won, lost, drew, STATE.teamRatings, m.opponent);
   const summEl = document.getElementById('match-summary');
-  if (summEl) { summEl.style.display = 'block'; summEl.textContent = result.summary; }
-  onComplete();
+  if (summEl) { summEl.style.display = 'block'; summEl.textContent = summary; }
+
+  // Update final score display colours
+  const sH = document.getElementById('score-home');
+  const sA = document.getElementById('score-away');
+  if (sH) sH.style.color = won ? 'var(--win-color)' : lost ? 'var(--loss-color)' : 'var(--text-primary)';
+  if (sA) sA.style.color = lost ? 'var(--win-color)' : won ? 'var(--loss-color)' : 'var(--text-primary)';
+
+  const ffBtn = document.getElementById('ff-btn');
+  if (ffBtn) ffBtn.remove();
+
+  const result = { homeScore, awayScore, won, drew, lost, penaltyWin,
+    events: m.allEvents, summary, opponentId: m.opponent.id };
+
+  m.onComplete(result);
+}
+
+function fastForwardMatch() {
+  const m = ACTIVE_MATCH;
+  // Auto-resolve all remaining phases with neutral option (index 1)
+  for (let ph = m.phase; ph < 3; ph++) {
+    const [minStart, minEnd] = PHASE_RANGES[ph];
+    const xgFrac = PHASE_XG_SPLIT[ph];
+    const phaseXG_u = m.baseXG_u * xgFrac * m.xGMod_u;
+    const phaseXG_o = m.baseXG_o * xgFrac * m.xGMod_o;
+    let pH = Math.min(poissonRandom(phaseXG_u), 4);
+    let pA = Math.min(poissonRandom(phaseXG_o), 4);
+    m.homeScore += pH; m.awayScore += pA;
+
+    // Auto-pick tactical moment (neutral option)
+    const mType = m.momentTypes[ph]; // undefined for ph=0 first pass but that's OK
+    if (ph < 2 && mType) {
+      const md = TACTICAL_MOMENTS[mType];
+      if (md) {
+        const eff = resolveTacticalEffect(md, 1, m.homeScore, m.awayScore);
+        m.xGMod_u *= eff.uMod || 1;
+        m.xGMod_o *= eff.oMod || 1;
+        if (eff.homeGoal) m.homeScore++;
+        if (eff.awayGoal) m.awayScore++;
+      }
+    }
+    const phEvents = generatePhaseEvents(pH, pA, m.opponent, minStart, minEnd);
+    m.allEvents.push(...phEvents);
+  }
+
+  // Instant display
+  const eventsEl = document.getElementById('match-events');
+  if (eventsEl) {
+    eventsEl.innerHTML = '';
+    m.allEvents.forEach(ev => {
+      const row = document.createElement('div');
+      row.className = 'match-event'+(ev.type==='goal'?' goal':ev.type==='star'?' star':'');
+      row.innerHTML = `<span class="match-event-min">${ev.minute}'</span><span>${ev.text}</span>`;
+      row.style.animation = 'none'; row.style.opacity = '1';
+      eventsEl.appendChild(row);
+    });
+  }
+  const sH = document.getElementById('score-home');
+  const sA = document.getElementById('score-away');
+  if (sH) sH.textContent = m.homeScore;
+  if (sA) sA.textContent = m.awayScore;
+
+  m.phase = 3;
+  finishMatch();
 }
 
 function showContinueButton(cb) {
@@ -2019,13 +2693,16 @@ function showLossScreen(result, opponent) {
 }
 
 function restartGame() {
-  // Reset state
   STATE.formation = null;
   STATE.slots = [];
   STATE.draftedIds = new Set();
   STATE.squad = {};
+  STATE.bench = [];
+  STATE.benchDraftIndex = 0;
+  STATE.draftPhase = 'xi';
   STATE.teamRatings = {};
   STATE.activeDraftSlot = null;
+  ACTIVE_MATCH = null;
   STATE.tournament = {
     phase:'league', matchIndex:0, leagueResults:[], points:0, wins:0, draws:0, losses:0,
     gf:0, ga:0, qualified:false, knockoutRound:0, knockoutResults:[], opponents:[]
@@ -2033,81 +2710,7 @@ function restartGame() {
   showScreen('start');
 }
 
-/* ═══════════════════════════════════════════
-   MATCH SIMULATION
-═══════════════════════════════════════════ */
-function simulateMatch(userRatings, opponent) {
-  const uOvr = userRatings.overall;
-  const oOvr = opponent.overall;
-  const diff = uOvr - oOvr;
-
-  // base xG
-  let uXG = 1.4, oXG = 1.4;
-
-  // rating differential
-  const steps = diff / 5;
-  if (steps > 0) { uXG *= Math.pow(1.12, Math.min(steps, 5)); oXG /= Math.pow(1.08, Math.min(steps, 5)); }
-  else if (steps < 0) { oXG *= Math.pow(1.12, Math.min(-steps, 5)); uXG /= Math.pow(1.08, Math.min(-steps, 5)); }
-
-  // attack/defence modifiers
-  const attMod = (userRatings.attack - opponent.defence) / 100;
-  const defMod = (userRatings.defence - opponent.attack) / 100;
-  uXG *= (1 + attMod * 0.4);
-  oXG *= (1 - defMod * 0.3);
-
-  // GK modifier
-  if (userRatings.goalkeeper < 65) uXG *= 1.1; // weak GK = more goals in
-  if (userRatings.goalkeeper > 85) oXG *= 0.88;
-
-  // clamp
-  uXG = Math.max(0.3, Math.min(uXG, 3.5));
-  oXG = Math.max(0.3, Math.min(oXG, 3.5));
-
-  let homeScore = poissonRandom(uXG);
-  let awayScore = poissonRandom(oXG);
-
-  // upset flip (8% chance)
-  if (Math.random() < 0.08) {
-    const tmp = homeScore; homeScore = awayScore; awayScore = tmp;
-  }
-
-  // cap
-  homeScore = Math.min(homeScore, 6);
-  awayScore = Math.min(awayScore, 6);
-
-  // star moment (+1 chance if Legend on pitch)
-  const legends = Object.values(STATE.squad).filter(p => p.tier === 'Legend');
-  if (legends.length > 0 && Math.random() < 0.05) homeScore = Math.min(homeScore + 1, 7);
-
-  const won = homeScore > awayScore;
-  const drew = homeScore === awayScore;
-  const lost = homeScore < awayScore;
-
-  // penalty shootout for knockouts (if draw)
-  let penaltyWin = false;
-  if (drew && STATE.tournament.phase !== 'league') {
-    // extra time first — slight bias toward higher rating
-    const etChance = 0.5 + (diff / 200);
-    if (Math.random() < etChance) { homeScore++; penaltyWin = true; }
-    else { awayScore++; penaltyWin = false; }
-  }
-
-  const finalWon = homeScore > awayScore;
-  const finalDrew = homeScore === awayScore;
-  const finalLost = homeScore < awayScore;
-
-  // generate events
-  const events = generateMatchEvents(homeScore, awayScore, opponent);
-  const summary = generateSummary(finalWon, finalLost, finalDrew, userRatings, opponent);
-
-  return {
-    homeScore, awayScore,
-    won: finalWon, drew: finalDrew, lost: finalLost,
-    penaltyWin,
-    events, summary,
-    opponentId: opponent.id
-  };
-}
+/* simulateMatch removed — replaced by phase-based engine above */
 
 function poissonRandom(lambda) {
   // approximation of Poisson distribution
@@ -2122,70 +2725,7 @@ function poissonRandom(lambda) {
   return k;
 }
 
-function generateMatchEvents(homeScore, awayScore, opponent) {
-  const events = [];
-  const usedMinutes = new Set();
-  const myPlayers = Object.values(STATE.squad);
-  const attPositions = ['ST','CF','LW','RW','CAM'];
-  const midPositions = ['CM','CDM','CAM','LM','RM'];
-  const defPositions = ['CB','LB','RB','LWB','RWB'];
-
-  function pickScorer(side) {
-    if (side === 'home') {
-      const att = myPlayers.filter(p => attPositions.includes(p.position));
-      const mid = myPlayers.filter(p => midPositions.includes(p.position));
-      const def = myPlayers.filter(p => defPositions.includes(p.position));
-      const r = Math.random();
-      if (r < 0.60 && att.length) return att[Math.floor(Math.random()*att.length)];
-      if (r < 0.90 && mid.length) return mid[Math.floor(Math.random()*mid.length)];
-      if (def.length) return def[Math.floor(Math.random()*def.length)];
-      return myPlayers[Math.floor(Math.random()*myPlayers.length)];
-    }
-    return null; // opponent goals just use opponent name
-  }
-
-  function uniqueMinute() {
-    let m;
-    do { m = Math.floor(Math.random() * 90) + 1; } while (usedMinutes.has(m));
-    usedMinutes.add(m);
-    return m;
-  }
-
-  // home goals
-  for (let i = 0; i < homeScore; i++) {
-    const scorer = pickScorer('home');
-    const min = uniqueMinute();
-    const template = GOAL_TEMPLATES[Math.floor(Math.random()*GOAL_TEMPLATES.length)];
-    events.push({ minute:min, side:'home', type:'goal', text:template.replace('{player}', scorer.name).replace('{team}','Your XI') });
-  }
-  // away goals
-  for (let i = 0; i < awayScore; i++) {
-    const min = uniqueMinute();
-    const template = OPP_GOAL_TEMPLATES[Math.floor(Math.random()*OPP_GOAL_TEMPLATES.length)];
-    events.push({ minute:min, side:'away', type:'goal', text:template.replace('{team}', opponent.name) });
-  }
-
-  // atmosphere events (1-3)
-  const numAtmos = Math.floor(Math.random() * 3) + 1;
-  for (let i = 0; i < numAtmos; i++) {
-    const min = uniqueMinute();
-    const t = ATMOSPHERE_TEMPLATES[Math.floor(Math.random()*ATMOSPHERE_TEMPLATES.length)];
-    const scorer = myPlayers[Math.floor(Math.random()*myPlayers.length)];
-    events.push({ minute:min, side:'none', type:'atmos', text:t.replace('{player}',scorer.name).replace('{team}',opponent.name) });
-  }
-
-  // star moment
-  const legends = myPlayers.filter(p => p.tier === 'Legend');
-  if (legends.length > 0 && Math.random() < 0.35) {
-    const star = legends[Math.floor(Math.random()*legends.length)];
-    const min = uniqueMinute();
-    const t = STAR_TEMPLATES[Math.floor(Math.random()*STAR_TEMPLATES.length)];
-    events.push({ minute:min, side:'none', type:'star', text:t.replace('{player}',star.name) });
-  }
-
-  events.sort((a,b) => a.minute - b.minute);
-  return events;
-}
+/* generateMatchEvents removed — replaced by generatePhaseEvents above */
 
 const GOAL_TEMPLATES = [
   '{player} cuts inside and fires into the bottom corner!',
