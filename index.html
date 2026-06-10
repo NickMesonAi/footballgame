@@ -3122,19 +3122,24 @@ function resolveTacticalDecision(logic, opponent, homeScore, awayScore) {
   return { homeGoal, awayGoal, uMod, oMod, type, outcome };
 }
 
-// Pick 5-8 events spread across match phases (min 4)
+// Pick events: exactly 3 tactical decisions + 2-5 action events = 5-8 total
 function selectTacticalMoments(userRatings, opponent) {
-  const numEvents = 5 + Math.floor(Math.random() * 4); // 5-8 total
-  const shuffled = shuffle([...MATCH_EVENTS]);
-  const chosen = [];
-  const usedCategories = new Set();
-  for (let i = 0; i < shuffled.length && chosen.length < numEvents; i++) {
-    const ev = shuffled[i];
-    // Limit to 2 per category for variety
-    const catCount = chosen.filter(e => e.category === ev.category).length;
-    if (catCount < 2) chosen.push(ev);
+  // 3 tactical decisions at fixed minutes ~25, ~55, ~75
+  const shuffledTactical = shuffle([...TACTICAL_DECISIONS]);
+  const tacticalIds = shuffledTactical.slice(0, 3).map(e => e.id);
+
+  // 2-5 action events from MATCH_EVENTS
+  const numAction = 2 + Math.floor(Math.random() * 4); // 2-5
+  const shuffledAction = shuffle([...MATCH_EVENTS]);
+  const actionChosen = [];
+  for (let i = 0; i < shuffledAction.length && actionChosen.length < numAction; i++) {
+    const ev = shuffledAction[i];
+    const catCount = actionChosen.filter(e => e.category === ev.category).length;
+    if (catCount < 2) actionChosen.push(ev);
   }
-  return chosen.map(e => e.id);
+  const actionIds = actionChosen.map(e => e.id);
+
+  return [...tacticalIds, ...actionIds];
 }
 
 function resolveEventEffect(option, homeScoreAtTime, awayScoreAtTime) {
@@ -3212,35 +3217,39 @@ function showNextMatch() {
   // Build base xG
   const userR = STATE.teamRatings;
   const diff = userR.overall - opponent.overall;
-  let uXG = 1.5, oXG = 1.4;
+  let uXG = 1.1, oXG = 0.9;
   const steps = diff / 5;
-  if (steps > 0) { uXG *= Math.pow(1.12, Math.min(steps,5)); oXG /= Math.pow(1.08, Math.min(steps,5)); }
-  else if (steps < 0) { oXG *= Math.pow(1.12, Math.min(-steps,5)); uXG /= Math.pow(1.08, Math.min(-steps,5)); }
+  if (steps > 0) { uXG *= Math.pow(1.18, Math.min(steps,5)); oXG /= Math.pow(1.12, Math.min(steps,5)); }
+  else if (steps < 0) { oXG *= Math.pow(1.18, Math.min(-steps,5)); uXG /= Math.pow(1.12, Math.min(-steps,5)); }
   const attMod = (userR.attack - opponent.defence) / 100;
   const defMod = (userR.defence - opponent.attack) / 100;
   uXG *= (1 + attMod * 0.4); oXG *= (1 - defMod * 0.3);
   if (userR.goalkeeper < 65) oXG *= 1.10;
   if (userR.goalkeeper > 85) oXG *= 0.85;
-  uXG = Math.max(0.4, Math.min(uXG, 3.2));
-  oXG = Math.max(0.4, Math.min(oXG, 3.2));
+  uXG = Math.max(0.3, Math.min(uXG, 2.2));
+  oXG = Math.max(0.3, Math.min(oXG, 2.2));
 
   const momentTypes = selectTacticalMoments(userR, opponent);
 
-  // Assign minutes to each tactical moment, distributed across 90 mins
-  // Phases: 1-44 (first half: 2-3 events), 46-75 (second half: 2-3 events), 76-90 (late: 1-2 events)
-  const phaseWindows = [
-    { min: 8,  max: 40 },
-    { min: 25, max: 44 },
-    { min: 46, max: 60 },
-    { min: 55, max: 72 },
-    { min: 62, max: 75 },
-    { min: 76, max: 84 },
-    { min: 78, max: 88 },
-    { min: 82, max: 90 },
+  // Assign minutes: first 3 are tactical decisions at ~25, ~55, ~75 with ±5 jitter
+  // Remaining are action events spread across the match
+  const tacticalMinutes = [25, 55, 75];
+  const actionWindows = [
+    { min: 8,  max: 38 },
+    { min: 42, max: 58 },
+    { min: 60, max: 78 },
+    { min: 80, max: 90 },
+    { min: 12, max: 30 },
   ];
   const scheduledMoments = momentTypes.map((id, i) => {
-    const win = phaseWindows[i] || phaseWindows[phaseWindows.length - 1];
-    const min = win.min + Math.floor(Math.random() * (win.max - win.min + 1));
+    let min;
+    if (i < 3) {
+      min = tacticalMinutes[i] + Math.floor(Math.random() * 11) - 5;
+    } else {
+      const winIdx = (i - 3) % actionWindows.length;
+      const win = actionWindows[winIdx];
+      min = win.min + Math.floor(Math.random() * (win.max - win.min + 1));
+    }
     return { id, minute: min };
   }).sort((a, b) => a.minute - b.minute);
 
@@ -3352,8 +3361,8 @@ function runMatchPhase() {
 
   let phaseHome = poissonRandom(phaseXG_u);
   let phaseAway = poissonRandom(phaseXG_o);
-  phaseHome = Math.min(phaseHome, 4);
-  phaseAway = Math.min(phaseAway, 4);
+  phaseHome = Math.min(phaseHome, 2);
+  phaseAway = Math.min(phaseAway, 2);
 
   // Star moment bonus (phase 3 only, 8% chance)
   const legends = Object.values(STATE.squad).filter(p => p.tier === 'Legend');
@@ -3615,6 +3624,227 @@ function pickTacticalChoice(eventId, optionIdx, homeScore, awayScore, isTactical
   }, 2000);
 }
 
+/* ═══════════════════════════════════════════
+   PENALTY SHOOTOUT
+═══════════════════════════════════════════ */
+function startPenaltyShootout(onComplete) {
+  const state = {
+    round: 1,
+    userScore: 0,
+    oppScore: 0,
+    userKicks: [],
+    oppKicks: [],
+    phase: 'user',
+    finished: false,
+    onComplete
+  };
+  renderShootoutPanel(state);
+}
+
+function renderShootoutPanel(state) {
+  if (ACTIVE_MATCH && ACTIVE_MATCH.fastForward) {
+    // Auto-resolve: simulate 5 kicks each
+    let uS = 0, oS = 0;
+    for (let i = 0; i < 5; i++) {
+      if (Math.random() > 0.25) uS++;
+      if (Math.random() > 0.25) oS++;
+    }
+    if (uS === oS) { uS > oS ? uS++ : oS++; } // avoid draw
+    state.onComplete(uS > oS);
+    return;
+  }
+
+  const content = document.getElementById('tournament-content');
+  // Remove old shootout panel if exists
+  const old = document.getElementById('shootout-panel');
+  if (old) old.remove();
+
+  const oppName = ACTIVE_MATCH ? ACTIVE_MATCH.opponent.name : 'Opponent';
+  const maxKicks = Math.max(5, state.round);
+
+  // Build kick dots
+  function dotsFor(kicks, total) {
+    let html = '';
+    for (let i = 0; i < total; i++) {
+      if (i < kicks.length) {
+        html += kicks[i] === 'goal' ? '<span style="font-size:1.1rem;margin:0 2px;">⚽</span>' : '<span style="font-size:1.1rem;margin:0 2px;">🧤</span>';
+      } else {
+        html += '<span style="font-size:1.1rem;margin:0 2px;opacity:0.3;">○</span>';
+      }
+    }
+    return html;
+  }
+
+  let actionHTML = '';
+  if (state.phase === 'user') {
+    actionHTML = `
+      <div style="font-size:0.85rem;font-weight:700;color:var(--blue);margin-bottom:10px;text-transform:uppercase;letter-spacing:0.1em;">Your Turn to Shoot</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <button class="btn-choice" onclick="userTakesPenalty('left', window._shootoutState)" style="flex:1;min-width:90px;padding:10px 12px;">
+          <span class="btn-choice-title">Left Corner</span>
+        </button>
+        <button class="btn-choice" onclick="userTakesPenalty('middle', window._shootoutState)" style="flex:1;min-width:90px;padding:10px 12px;">
+          <span class="btn-choice-title">Down the Middle</span>
+        </button>
+        <button class="btn-choice" onclick="userTakesPenalty('right', window._shootoutState)" style="flex:1;min-width:90px;padding:10px 12px;">
+          <span class="btn-choice-title">Right Corner</span>
+        </button>
+      </div>`;
+  } else {
+    actionHTML = `
+      <div style="font-size:0.85rem;font-weight:700;color:var(--loss-color);margin-bottom:10px;text-transform:uppercase;letter-spacing:0.1em;">You are the Goalkeeper</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <button class="btn-choice" onclick="oppTakesPenalty('left', window._shootoutState)" style="flex:1;min-width:90px;padding:10px 12px;">
+          <span class="btn-choice-title">Dive Left</span>
+        </button>
+        <button class="btn-choice" onclick="oppTakesPenalty('middle', window._shootoutState)" style="flex:1;min-width:90px;padding:10px 12px;">
+          <span class="btn-choice-title">Stay Middle</span>
+        </button>
+        <button class="btn-choice" onclick="oppTakesPenalty('right', window._shootoutState)" style="flex:1;min-width:90px;padding:10px 12px;">
+          <span class="btn-choice-title">Dive Right</span>
+        </button>
+      </div>`;
+  }
+
+  const panel = document.createElement('div');
+  panel.id = 'shootout-panel';
+  panel.className = 'tactical-moment';
+  panel.style.borderColor = 'var(--blue)';
+  panel.innerHTML = `
+    <div class="tactical-moment-header">
+      <span class="tactical-moment-badge">Penalty Shootout</span>
+      <span style="font-size:0.72rem;color:var(--text-muted);margin-left:auto">Kick ${Math.max(state.userKicks.length, state.oppKicks.length) + 1}${state.round > 5 ? ' (Sudden Death)' : ' of 5'}</span>
+    </div>
+    <div style="background:var(--blue-light);border-radius:var(--radius-sm);padding:12px 16px;margin-bottom:14px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+        <div style="font-size:0.8rem;font-weight:700;color:var(--text-dark);">Your XI</div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:2rem;color:var(--text-dark);letter-spacing:2px;">${state.userScore} – ${state.oppScore}</div>
+        <div style="font-size:0.8rem;font-weight:700;color:var(--text-dark);text-align:right;">${oppName}</div>
+      </div>
+      <div style="display:flex;justify-content:space-between;">
+        <div>${dotsFor(state.userKicks, maxKicks)}</div>
+        <div>${dotsFor(state.oppKicks, maxKicks)}</div>
+      </div>
+    </div>
+    <div id="shootout-action">${actionHTML}</div>
+    <div id="shootout-outcome" style="display:none;margin-top:10px;padding:10px 14px;border-radius:var(--radius-sm);font-size:0.85rem;font-weight:600;text-align:center;"></div>
+  `;
+  content.appendChild(panel);
+  window._shootoutState = state;
+}
+
+function userTakesPenalty(direction, state) {
+  // Disable buttons
+  const panel = document.getElementById('shootout-panel');
+  if (panel) panel.querySelectorAll('.btn-choice').forEach(b => b.disabled = true);
+
+  const r = Math.random();
+  const keeperGuess = r < 0.4 ? 'left' : r < 0.8 ? 'right' : 'middle';
+  const scored = keeperGuess !== direction;
+  state.userKicks.push(scored ? 'goal' : 'saved');
+  if (scored) state.userScore++;
+
+  const outcomeText = scored
+    ? `You shot ${direction}. The keeper dived ${keeperGuess}. ⚽ GOAL! ${state.userScore}–${state.oppScore}`
+    : `You shot ${direction}. The keeper guessed correctly — ${direction}! 🧤 SAVED! ${state.userScore}–${state.oppScore}`;
+
+  showShootoutOutcome(outcomeText, scored ? 'good' : 'bad', () => {
+    state.phase = 'opp';
+    advanceShootout(state);
+  });
+}
+
+function oppTakesPenalty(keeperChoice, state) {
+  // Disable buttons
+  const panel = document.getElementById('shootout-panel');
+  if (panel) panel.querySelectorAll('.btn-choice').forEach(b => b.disabled = true);
+
+  const r = Math.random();
+  const shotDir = r < 0.4 ? 'left' : r < 0.8 ? 'right' : 'middle';
+  const saved = keeperChoice === shotDir;
+  state.oppKicks.push(saved ? 'saved' : 'goal');
+  if (!saved) state.oppScore++;
+
+  const outcomeText = saved
+    ? `You dived ${keeperChoice}. They shot ${shotDir}. 🧤 GREAT SAVE! ${state.userScore}–${state.oppScore}`
+    : `You dived ${keeperChoice}. They shot ${shotDir}. ⚽ GOAL! ${state.userScore}–${state.oppScore}`;
+
+  showShootoutOutcome(outcomeText, saved ? 'good' : 'bad', () => {
+    state.phase = 'user';
+    state.round++;
+    advanceShootout(state);
+  });
+}
+
+function showShootoutOutcome(text, type, cb) {
+  const outcomeEl = document.getElementById('shootout-outcome');
+  const actionEl = document.getElementById('shootout-action');
+  if (actionEl) actionEl.style.display = 'none';
+  if (outcomeEl) {
+    outcomeEl.style.display = 'block';
+    outcomeEl.className = 'choice-result ' + (type || 'neutral');
+    outcomeEl.textContent = text;
+  }
+  setTimeout(cb, 1800);
+}
+
+function advanceShootout(state) {
+  const maxRounds = state.round > 5 ? state.round : 5;
+  const userKicksDone = state.userKicks.length;
+  const oppKicksDone = state.oppKicks.length;
+
+  // After both teams have taken 5 kicks
+  if (userKicksDone >= 5 && oppKicksDone >= 5) {
+    if (state.userScore !== state.oppScore) {
+      finishShootout(state);
+      return;
+    }
+    // Sudden death continues (state.round already incremented)
+  }
+
+  // Early finish checks
+  const userRemaining = maxRounds - userKicksDone;
+  const oppRemaining = maxRounds - oppKicksDone;
+  if (state.userScore > state.oppScore + oppRemaining) {
+    finishShootout(state); return;
+  }
+  if (state.oppScore > state.userScore + userRemaining) {
+    finishShootout(state); return;
+  }
+
+  // In sudden death: after both kick in a round, check for difference
+  if (state.round > 5 && userKicksDone === oppKicksDone && userKicksDone === state.round - 1) {
+    // Both just completed a sudden death round
+    if (state.userScore !== state.oppScore) {
+      finishShootout(state); return;
+    }
+  }
+
+  renderShootoutPanel(state);
+}
+
+function finishShootout(state) {
+  const won = state.userScore > state.oppScore;
+  const msg = won
+    ? `🏆 YOU WIN ON PENALTIES! ${state.userScore}–${state.oppScore}`
+    : `💔 Penalties lost. ${state.userScore}–${state.oppScore}`;
+
+  const panel = document.getElementById('shootout-panel');
+  if (panel) {
+    const outcomeEl = panel.querySelector('#shootout-outcome');
+    const actionEl = panel.querySelector('#shootout-action');
+    if (actionEl) actionEl.style.display = 'none';
+    if (outcomeEl) {
+      outcomeEl.style.display = 'block';
+      outcomeEl.className = 'choice-result ' + (won ? 'good' : 'bad');
+      outcomeEl.textContent = msg;
+      outcomeEl.style.fontSize = '1.05rem';
+    }
+  }
+
+  setTimeout(() => state.onComplete(won), 2000);
+}
+
 function finishMatch() {
   const m = ACTIVE_MATCH;
   let homeScore = m.homeScore;
@@ -3622,7 +3852,7 @@ function finishMatch() {
 
   // Upset flip (5%)
   if (Math.random() < 0.05) { const tmp = homeScore; homeScore = awayScore; awayScore = tmp; }
-  homeScore = Math.min(homeScore, 7); awayScore = Math.min(awayScore, 7);
+  homeScore = Math.min(homeScore, 5); awayScore = Math.min(awayScore, 5);
 
   let won = homeScore > awayScore;
   let drew = homeScore === awayScore;
@@ -3676,8 +3906,8 @@ function fastForwardMatch() {
     const xgFrac = PHASE_XG_SPLIT[ph];
     const phaseXG_u = m.baseXG_u * xgFrac * m.xGMod_u;
     const phaseXG_o = m.baseXG_o * xgFrac * m.xGMod_o;
-    let pH = Math.min(poissonRandom(phaseXG_u), 4);
-    let pA = Math.min(poissonRandom(phaseXG_o), 4);
+    let pH = Math.min(poissonRandom(phaseXG_u), 2);
+    let pA = Math.min(poissonRandom(phaseXG_o), 2);
     m.homeScore += pH; m.awayScore += pA;
 
     // Auto-pick all tactical moments in this phase range (neutral/middle option)
@@ -3685,10 +3915,17 @@ function fastForwardMatch() {
       sm.minute >= minStart && sm.minute <= minEnd
     );
     phaseMoments.forEach(sm => {
-      const ed = MATCH_EVENTS.find(e => e.id === sm.id);
+      const ed = MATCH_EVENTS.find(e => e.id === sm.id) || TACTICAL_DECISIONS.find(e => e.id === sm.id);
       if (ed) {
         const midIdx = Math.floor(ed.options.length / 2);
-        const eff = resolveEventEffect(ed.options[midIdx], m.homeScore, m.awayScore);
+        const isTactical = !!TACTICAL_DECISIONS.find(e => e.id === sm.id);
+        let eff;
+        if (isTactical && ed.options[midIdx].logic) {
+          const r = resolveTacticalDecision(ed.options[midIdx].logic, m.opponent, m.homeScore, m.awayScore);
+          eff = r;
+        } else {
+          eff = resolveEventEffect(ed.options[midIdx], m.homeScore, m.awayScore);
+        }
         m.xGMod_u *= eff.uMod || 1;
         m.xGMod_o *= eff.oMod || 1;
         if (eff.homeGoal) m.homeScore++;
