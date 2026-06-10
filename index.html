@@ -1154,6 +1154,58 @@ h1, h2, h3 { font-family: 'Bebas Neue', sans-serif; letter-spacing: 0.04em; colo
   .bench-swap-columns { grid-template-columns: 1fr; }
 }
 
+/* ── WIN SCREEN CELEBRATION ── */
+#screen-win.champion-bg {
+  background: linear-gradient(135deg, var(--blue-deeper) 0%, #0a1a5c 40%, #1a0a00 100%);
+}
+.champion-banner {
+  background: linear-gradient(90deg, var(--yellow-dark), var(--yellow), var(--yellow-dark));
+  color: var(--blue-deep);
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: clamp(2.2rem, 6vw, 4rem);
+  letter-spacing: 0.08em;
+  padding: 20px 40px;
+  text-align: center;
+  border-radius: var(--radius-md);
+  width: 100%;
+  max-width: 680px;
+  box-shadow: 0 0 40px rgba(245,216,74,0.4);
+  animation: championGlow 2s ease-in-out infinite;
+}
+@keyframes championGlow {
+  0%, 100% { box-shadow: 0 0 40px rgba(245,216,74,0.4); }
+  50%       { box-shadow: 0 0 80px rgba(245,216,74,0.7); }
+}
+.champion-score-display {
+  background: rgba(255,255,255,0.08);
+  border: 2px solid var(--yellow);
+  border-radius: var(--radius-lg);
+  padding: 24px 40px;
+  display: flex; align-items: center; gap: 20px;
+  width: 100%; max-width: 500px;
+}
+.champion-stat-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px; width: 100%; max-width: 680px;
+}
+.champion-stat-card {
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(245,216,74,0.25);
+  border-radius: var(--radius-md);
+  padding: 16px;
+}
+.champion-stat-label {
+  font-size: 0.7rem; font-weight: 600; letter-spacing: 0.1em;
+  text-transform: uppercase; color: rgba(255,255,255,0.5);
+  margin-bottom: 6px;
+}
+.champion-stat-value {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.5rem; font-weight: 400; color: #fff;
+}
+.champion-stat-value.gold { color: var(--yellow); }
+
 /* ── TACTICAL MOMENT ── */
 .tactical-moment {
   background: var(--white);
@@ -1377,15 +1429,7 @@ h1, h2, h3 { font-family: 'Bebas Neue', sans-serif; letter-spacing: 0.04em; colo
 ═══════════════════════════════════════════ -->
 <div id="screen-win" class="screen">
   <div class="result-screen-content" id="win-content">
-    <div class="result-trophy">🏆</div>
-    <div class="result-headline win">Champions.</div>
-    <div class="result-subhead" id="win-subhead">You are the Super League Champion.</div>
-    <div class="result-final-score" id="win-final-score"></div>
-    <div class="result-stats-grid" id="win-stats"></div>
-    <div class="result-actions">
-      <button class="btn btn-gold btn-lg" onclick="restartGame()">Draft Again</button>
-      <button class="btn-share" id="win-share-btn" onclick="copyResult('win')">Copy Result</button>
-    </div>
+    <!-- content injected by showWinScreen() -->
   </div>
 </div>
 
@@ -1946,27 +1990,65 @@ function renderBenchPanel() {
   if (!benchPanel) return;
   if (!STATE.bench || STATE.bench.length === 0) { benchPanel.innerHTML = ''; return; }
 
+  const starterEntries = Object.entries(STATE.squad);
+
   benchPanel.innerHTML = `
-    <div class="section-title" style="margin-bottom:10px;">Bench — click "Swap In" or drag onto pitch</div>
-    <div id="bench-list" style="display:flex;flex-direction:column;gap:6px;">
-      ${STATE.bench.map((p, i) => `
-        <div class="bench-player-row" id="bench-row-${i}" draggable="true"
-             ondragstart="onBenchDragStart(event,${i})"
-             style="cursor:grab;">
-          <span class="bench-rating" style="color:${TIER_COLORS[p.tier]}">${p.rating}</span>
-          <span class="bench-name">${p.name}</span>
-          <span class="bench-pos">${p.position}</span>
-          <span class="bench-tier" style="color:${TIER_COLORS[p.tier]}">${p.tier}</span>
-          <button class="btn-swap" onclick="initSwap(${i})">Swap In</button>
-        </div>
-      `).join('')}
+    <div class="section-title" style="margin-bottom:12px;">Substitutions — Click "Swap In →" to select a bench player, then pick a starter to replace</div>
+    <div id="swap-preview-banner" style="display:none;" class="swap-preview-row" id="swap-preview-banner">
+      <span id="swap-preview-text">Select a starter to replace</span>
+      <button onclick="cancelSwap()" style="margin-left:12px;font-size:0.72rem;padding:4px 10px;background:rgba(255,255,255,0.2);border:1px solid rgba(255,255,255,0.3);border-radius:4px;cursor:pointer;color:inherit;">✕ Cancel</button>
     </div>
-    <div id="swap-picker" style="display:none;margin-top:12px;"></div>
+    <div class="bench-swap-columns">
+      <div>
+        <div class="bench-column-header">Starting XI</div>
+        <div class="starter-list" id="starter-list">
+          ${starterEntries.map(([key, p]) => {
+            const tierColor = TIER_COLORS[p.tier] || '#aab0c4';
+            const posClass = 'pos-' + getPosClass(p.position).replace('pos-','');
+            return `<div class="starter-row" id="starter-slot-${key}" onclick="onStarterClick('${key}')">
+              <span class="starter-rating-badge" style="color:${tierColor}">${p.rating}</span>
+              <span class="starter-info">
+                <div class="starter-name">${p.name}</div>
+                <span class="starter-pos-pill ${getPosClass(p.position)}">${p.position}</span>
+              </span>
+              <span style="font-size:0.65rem;color:var(--text-muted);">${key}</span>
+            </div>`;
+          }).join('')}
+        </div>
+      </div>
+      <div>
+        <div class="bench-column-header">Bench</div>
+        <div class="bench-list" id="bench-list">
+          ${STATE.bench.map((p, i) => {
+            const tierColor = TIER_COLORS[p.tier] || '#aab0c4';
+            return `<div class="bench-row" id="bench-row-${i}">
+              <span class="bench-rating-badge" style="color:${tierColor}">${p.rating}</span>
+              <span class="bench-info">
+                <div class="bench-player-name">${p.name}</div>
+                <span class="bench-pos-pill ${getPosClass(p.position)}">${p.position}</span>
+              </span>
+              <button class="btn-swap-in" id="bench-swapin-${i}" onclick="initSwap(${i})">Swap In →</button>
+            </div>`;
+          }).join('')}
+        </div>
+      </div>
+    </div>
+    <div id="swap-picker" style="display:none;"></div>
   `;
 
   // Add drag events to summary pitch slots
   addDragDropToPitch();
 }
+
+let _activeSwapBenchIdx = null;
+
+function onStarterClick(slotKey) {
+  if (_activeSwapBenchIdx === null) return;
+  const benchPlayer = STATE.bench[_activeSwapBenchIdx];
+  if (!isCompatibleSwap(benchPlayer.position, slotKey)) return;
+  confirmSwap(_activeSwapBenchIdx, slotKey);
+}
+
 
 let _dragBenchIdx = null;
 function onBenchDragStart(event, benchIdx) {
@@ -2024,52 +2106,77 @@ function isCompatibleSwap(benchPos, slotKey) {
 }
 
 function initSwap(benchIdx) {
+  // If same bench button clicked again, cancel
+  if (_activeSwapBenchIdx === benchIdx) { cancelSwap(); return; }
+
+  // Reset previous selection
+  document.querySelectorAll('.btn-swap-in').forEach(b => b.classList.remove('active-selecting'));
+  document.querySelectorAll('.starter-row').forEach(r => {
+    r.classList.remove('highlight-compatible', 'incompatible-dim');
+  });
+
+  _activeSwapBenchIdx = benchIdx;
   const benchPlayer = STATE.bench[benchIdx];
-  const picker = document.getElementById('swap-picker');
-  const entries = Object.entries(STATE.squad);
-  picker.style.display = 'block';
-  picker.innerHTML = `
-    <div style="font-size:0.8rem;color:var(--text-muted);margin-bottom:8px;">
-      Swap <strong style="color:var(--yellow-dark)">${benchPlayer.name}</strong> (${benchPlayer.position}) with which starter?
-    </div>
-    <div style="display:flex;flex-direction:column;gap:5px;">
-      ${entries.map(([key, p]) => {
-        const compat = isCompatibleSwap(benchPlayer.position, key);
-        const cls = compat ? 'btn-swap-starter' : 'btn-swap-starter incompatible';
-        return `<button class="${cls}" ${compat ? `onclick="confirmSwap(${benchIdx},'${key}')"` : 'disabled'}>
-          <span style="font-family:'Bebas Neue',sans-serif;font-size:1.1rem;color:${TIER_COLORS[p.tier]}">${p.rating}</span>
-          <span>${p.name}</span>
-          <span style="color:var(--text-muted);font-size:0.72rem;">${p.position} (${key})</span>
-          ${!compat ? '<span style="font-size:0.65rem;color:#dc2626;margin-left:auto">Incompatible</span>' : ''}
-        </button>`;
-      }).join('')}
-    </div>
-    <button class="btn-ghost" style="font-size:0.75rem;padding:6px 14px;margin-top:8px;" onclick="cancelSwap()">Cancel</button>
-  `;
+
+  // Highlight the bench button
+  const swapBtn = document.getElementById('bench-swapin-' + benchIdx);
+  if (swapBtn) swapBtn.classList.add('active-selecting');
+
+  // Highlight compatible starters
+  Object.entries(STATE.squad).forEach(([key, p]) => {
+    const row = document.getElementById('starter-slot-' + key);
+    if (!row) return;
+    if (isCompatibleSwap(benchPlayer.position, key)) {
+      row.classList.add('highlight-compatible');
+    } else {
+      row.classList.add('incompatible-dim');
+    }
+  });
+
+  // Show preview banner
+  const banner = document.getElementById('swap-preview-banner');
+  const previewText = document.getElementById('swap-preview-text');
+  if (banner) banner.style.display = 'flex';
+  if (previewText) previewText.textContent = `"${benchPlayer.name}" → Click a highlighted starter to replace`;
 }
 
 function confirmSwap(benchIdx, slotKey) {
   const benchPlayer = STATE.bench[benchIdx];
   const starterPlayer = STATE.squad[slotKey];
+  // Show toast
+  showSwapToast(`Swapped: ${benchPlayer.name} → Replacing: ${starterPlayer.name} at ${slotKey}`);
   STATE.squad[slotKey] = benchPlayer;
   STATE.bench[benchIdx] = starterPlayer;
+  _activeSwapBenchIdx = null;
   // Recalculate ratings
   STATE.teamRatings = calculateTeamRatings(STATE.squad, STATE.slots);
-  document.getElementById('rating-overall').textContent = STATE.teamRatings.overall;
-  renderSummaryPitch();
-  renderBenchPanel();
-  cancelSwap();
-  // Update bars
-  const bars = ['attack','midfield','defence','goalkeeper'];
-  bars.forEach(b => {
-    const fill = document.querySelector(`.rating-bar-fill[data-target]`);
-  });
   renderTeamSummary();
 }
 
 function cancelSwap() {
+  _activeSwapBenchIdx = null;
+  document.querySelectorAll('.btn-swap-in').forEach(b => b.classList.remove('active-selecting'));
+  document.querySelectorAll('.starter-row').forEach(r => {
+    r.classList.remove('highlight-compatible', 'incompatible-dim');
+  });
+  const banner = document.getElementById('swap-preview-banner');
+  if (banner) banner.style.display = 'none';
   const picker = document.getElementById('swap-picker');
   if (picker) picker.style.display = 'none';
+}
+
+function showSwapToast(msg) {
+  const existing = document.querySelector('.swap-toast');
+  if (existing) existing.remove();
+  const toast = document.createElement('div');
+  toast.className = 'swap-toast';
+  toast.textContent = msg;
+  document.body.appendChild(toast);
+  setTimeout(() => {
+    toast.style.opacity = '0';
+    toast.style.transition = 'opacity 0.4s';
+    setTimeout(() => toast.remove(), 400);
+  }, 2800);
 }
 
 function renderSummaryPitch() {
@@ -2808,12 +2915,232 @@ const MATCH_EVENTS = [
   },
 ];
 
-// Pick 2 events for the match, avoiding repeats
+/* ═══════════════════════════════════════════
+   TACTICAL DECISIONS (Opponent-Aware)
+═══════════════════════════════════════════ */
+const TACTICAL_DECISIONS = [
+  {
+    id: 'td_park_bus',
+    category: 'tactical',
+    titleFn: (m, s, opp) => `You are ${s.home > s.away ? (s.home-s.away)+'-0 up' : 'drawing'} against ${opp.name} with ${90 - m}mins left. What do you do?`,
+    condition: (m, s) => s.home >= s.away && m >= 55,
+    options: [
+      { text: 'Park the bus', logic: 'park_bus', desc: 'Deep defensive block — protect the lead' },
+      { text: 'Keep attacking', logic: 'keep_attacking', desc: 'Press for more goals' },
+      { text: 'Control possession', logic: 'control_possession', desc: 'Dominate the ball and tire them out' },
+    ]
+  },
+  {
+    id: 'td_chasing',
+    category: 'tactical',
+    titleFn: (m, s, opp) => `You have just gone behind to ${opp.name}. How do you respond?`,
+    condition: (m, s) => s.home < s.away,
+    options: [
+      { text: 'Go all out attack', logic: 'go_all_out_attack', desc: 'Push everyone forward to equalise' },
+      { text: 'Stay patient', logic: 'stay_patient', desc: 'Trust your shape, wait for the opening' },
+      { text: 'Press high', logic: 'press_high', desc: 'Win the ball back high up the pitch' },
+    ]
+  },
+  {
+    id: 'td_halftime_level',
+    category: 'tactical',
+    titleFn: (m, s, opp) => `Half time against ${opp.name}. Level at ${s.home}-${s.away}. Tactical talk?`,
+    condition: (m, s) => m >= 44 && m <= 47,
+    options: [
+      { text: 'Sit deeper and counter', logic: 'sit_deeper', desc: 'Compact shape, hit them on the break' },
+      { text: 'Increase tempo', logic: 'increase_tempo', desc: 'Start the second half at high intensity' },
+      { text: 'Exploit the wings', logic: 'exploit_wings', desc: 'Target wide areas where they look vulnerable' },
+    ]
+  },
+  {
+    id: 'td_late_winning',
+    category: 'tactical',
+    titleFn: (m, s, opp) => `${90-m} minutes left. You are winning ${s.home}-${s.away} against ${opp.name}. What is your priority?`,
+    condition: (m, s) => s.home > s.away && m >= 70,
+    options: [
+      { text: 'Drop fullbacks deep', logic: 'drop_fullbacks', desc: 'Stop their wide threat, protect the flanks' },
+      { text: 'Use your star player', logic: 'use_star_player', desc: 'Let your best player decide the match' },
+      { text: 'Long balls direct', logic: 'long_balls_direct', desc: 'Relieve pressure and run down the clock' },
+    ]
+  },
+  {
+    id: 'td_counter_attack',
+    category: 'tactical',
+    titleFn: (m, s, opp) => `${opp.name} are pushing forward. Do you counter?`,
+    condition: (m, s) => m >= 60,
+    options: [
+      { text: 'Counter attack fast', logic: 'counter_attack', desc: 'Hit them on the break immediately' },
+      { text: 'Protect star player', logic: 'protect_star', desc: 'Shield your best player from heavy pressing' },
+      { text: 'Respond aggressively', logic: 'respond_aggressively', desc: 'Match their intensity and press back' },
+    ]
+  },
+];
+
+function resolveTacticalDecision(logic, opponent, homeScore, awayScore) {
+  const opp = opponent || {};
+  const attRating = opp.attack || 80;
+  const defRating = opp.defence || 80;
+  const midRating = opp.midfield || 80;
+  const userAtt = STATE.teamRatings.attack || 75;
+
+  const highPressTeams = ['barca_0809','barca_1415','liverpool_1819','mancity_2223','atletico_1314','atletico_1516','bayern_1920'];
+  const techTeams = ['barca_0809','barca_1415','rm_1314','rm_1718','mancity_2223','bayern_1213'];
+  const isHighPress = highPressTeams.includes(opp.id);
+  const isTechnical = techTeams.includes(opp.id);
+
+  const allSquad = Object.values(STATE.squad);
+  const starPlayer = allSquad.length ? allSquad.reduce((a,b) => a.rating > b.rating ? a : b) : null;
+  const hasTallStrikers = allSquad.some(p => ['ST','CF'].includes(p.position) && p.rating > 75);
+
+  let homeGoal = false, awayGoal = false, uMod = 1.0, oMod = 1.0, type = 'neutral', outcome = '';
+
+  if (logic === 'park_bus') {
+    if (attRating > 83) {
+      const scored = Math.random() < 0.65;
+      if (scored) { awayGoal = true; type = 'bad'; outcome = `You tried to park the bus against ${opp.name || 'them'}, but their ferocious attack found a way through. They equalise!`; }
+      else { type = 'good'; uMod = 0.7; oMod = 0.5; outcome = `Against all odds, your 10-man wall held out against ${opp.name || 'them'}. Heroic defending!`; }
+    } else if (attRating >= 75) {
+      const scored = Math.random() < 0.50;
+      if (scored) { awayGoal = true; type = 'bad'; outcome = `The bus was parked but ${opp.name || 'they'} found a gap. They squeeze one in.`; }
+      else { type = 'good'; uMod = 0.7; oMod = 0.55; outcome = `Compact and disciplined. ${opp.name || 'They'} cannot break you down. The lead is held.`; }
+    } else {
+      const held = Math.random() < 0.75;
+      if (held) { type = 'good'; uMod = 0.7; oMod = 0.45; outcome = `${opp.name || 'They'} are toothless against your defensive wall. Comfortable hold.`; }
+      else { awayGoal = true; type = 'bad'; outcome = `Even against weaker opposition, a lapse in concentration lets ${opp.name || 'them'} in.`; }
+    }
+  } else if (logic === 'keep_attacking') {
+    const isWinning = homeScore > awayScore;
+    const isHighCounter = attRating > 80 && midRating > 80;
+    let scoreChance = isWinning ? 0.45 : 0.55;
+    let counterChance = isWinning ? 0.35 : 0.30;
+    if (isHighCounter) counterChance += 0.15;
+    const roll = Math.random();
+    if (roll < scoreChance) { homeGoal = true; type = 'good'; outcome = `Brave decision to keep attacking! It pays off — your team scores another. ${opp.name || 'They'} are rocked!`; }
+    else if (roll < scoreChance + counterChance) { awayGoal = true; type = 'bad'; outcome = `${opp.name || 'They'} hit you on the counter. Dangerous choice that backfired.`; }
+    else { type = 'neutral'; uMod = 1.15; outcome = `The aggressive approach creates chances but nothing goes in. The game remains tight.`; }
+  } else if (logic === 'control_possession') {
+    if (isHighPress) {
+      const lost = Math.random() < 0.45;
+      if (lost) { awayGoal = true; type = 'bad'; outcome = `${opp.name || 'They'} are one of the most intense pressing sides ever. They win the ball in a dangerous area and capitalise!`; }
+      else { type = 'good'; uMod = 1.1; oMod = 0.85; outcome = `Even under the press, your team retains the ball beautifully. Composure under pressure.`; }
+    } else {
+      const success = Math.random() < 0.75;
+      if (success) { type = 'good'; uMod = 1.15; oMod = 0.80; outcome = `Excellent possession football wears them down. You control the game and create several openings.`; }
+      else { type = 'neutral'; outcome = `Possession kept but you lack the final ball. The game stays even.`; }
+    }
+  } else if (logic === 'press_high') {
+    if (isTechnical) {
+      const played = Math.random() < 0.60;
+      if (played) { awayGoal = true; type = 'bad'; outcome = `${opp.name || 'They'} are too technically gifted. They play through your press with ease and score!`; }
+      else { type = 'good'; uMod = 1.2; oMod = 0.85; outcome = `Your press unsettles even them. You win the ball high and create a dangerous chance!`; }
+    } else {
+      const won = Math.random() < 0.65;
+      if (won) { homeGoal = true; type = 'good'; outcome = `The high press pays dividends! You win the ball in their half and convert the chance!`; }
+      else { type = 'neutral'; uMod = 1.05; oMod = 1.05; outcome = `The press is positive but disorganised. The game opens up but neither side benefits clearly.`; }
+    }
+  } else if (logic === 'sit_deeper') {
+    if (attRating > 82) {
+      const broke = Math.random() < 0.60;
+      if (broke) { awayGoal = true; type = 'bad'; outcome = `${opp.name || 'They'} eventually break through your deep block. You concede from sustained pressure.`; }
+      else { type = 'good'; uMod = 0.75; oMod = 0.60; outcome = `Deep, organised, resilient. Even their elite attack cannot find a way through.`; }
+    } else {
+      const held = Math.random() < 0.65;
+      if (held) { type = 'good'; uMod = 0.8; oMod = 0.55; outcome = `Sitting deep frustrates them completely. They have no answers for your compact shape.`; }
+      else { awayGoal = true; type = 'bad'; outcome = `Even against this attack, a moment of quality from ${opp.name || 'them'} punishes your passivity.`; }
+    }
+  } else if (logic === 'counter_attack') {
+    if (defRating < 75) {
+      const scored = Math.random() < 0.70;
+      if (scored) { homeGoal = true; type = 'good'; outcome = `Their defence is exposed on the counter! You exploit the space and score a brilliant breakaway goal!`; }
+      else { type = 'neutral'; uMod = 1.2; outcome = `The counter creates good chances but you cannot finish. Still, your team looks dangerous.`; }
+    } else if (defRating > 85) {
+      const scored = Math.random() < 0.35;
+      if (scored) { homeGoal = true; type = 'good'; outcome = `Even against their solid defence, your counter finds the net. Brilliant finishing under pressure.`; }
+      else { type = 'neutral'; uMod = 1.0; oMod = 1.1; outcome = `Their defence is well-organised. The counter is snuffed out. They retain the ball and push back.`; }
+    } else {
+      const scored = Math.random() < 0.52;
+      if (scored) { homeGoal = true; type = 'good'; outcome = `The counter attack is clinical! Your striker runs onto the through ball and finishes well.`; }
+      else { type = 'neutral'; uMod = 1.1; outcome = `Good counter-attacking play but the final ball lets you down. Keep the pressure on.`; }
+    }
+  } else if (logic === 'go_all_out_attack') {
+    const scored = Math.random() < 0.55;
+    if (scored) { homeGoal = true; type = 'good'; outcome = `The gamble pays off! You throw everyone forward and score the equaliser! The crowd goes wild!`; }
+    else { awayGoal = true; type = 'bad'; outcome = `You leave too much space at the back chasing the game. ${opp.name || 'They'} counter and extend their lead!`; }
+  } else if (logic === 'stay_patient') {
+    const scored = Math.random() < 0.40;
+    if (scored) { homeGoal = true; type = 'good'; outcome = `The patient approach works! You gradually create openings and grab the equaliser. Composed football.`; }
+    else { type = 'neutral'; oMod = 0.90; outcome = `You stay patient but running out of time. The clock ticks on — an equaliser still looks possible.`; }
+  } else if (logic === 'use_star_player') {
+    const starRating = starPlayer ? starPlayer.rating : 75;
+    const prob = starRating >= 90 ? 0.70 : starRating >= 80 ? 0.55 : 0.40;
+    const scored = Math.random() < prob;
+    const starName = starPlayer ? starPlayer.name : 'your best player';
+    if (scored) { homeGoal = true; type = 'good'; outcome = `${starName} is handed the freedom of the pitch and delivers! A moment of pure class wins you the game!`; }
+    else { type = 'neutral'; uMod = 1.1; outcome = `${starName} tries to make something happen but the opposition have him well-marked. Still dangerous.`; }
+  } else if (logic === 'protect_star') {
+    const freed = Math.random() < 0.65;
+    if (freed) { type = 'good'; uMod = 1.2; oMod = 0.9; outcome = `With your star shielded, other players find space. Your team creates good chances as the defence over-commits.`; }
+    else { type = 'neutral'; outcome = `Your star remains well-marked despite your tactical adjustment. Frustrating half.`; }
+  } else if (logic === 'increase_tempo') {
+    if (attRating < 78) {
+      const success = Math.random() < 0.70;
+      if (success) { type = 'good'; uMod = 1.25; oMod = 0.90; outcome = `The high tempo second half blows them away! You create three clear chances in five minutes!`; }
+      else { homeGoal = true; type = 'good'; outcome = `The early second half pressure pays off with a goal! The momentum is entirely with you now!`; }
+    } else {
+      const countered = Math.random() < 0.50;
+      if (countered) { awayGoal = true; type = 'bad'; outcome = `The high tempo leaves you exposed. ${opp.name || 'They'} are quality enough to hit you on the counter.`; }
+      else { type = 'good'; uMod = 1.15; oMod = 0.95; outcome = `Risky against this quality but the tempo is working — you are creating more than them.`; }
+    }
+  } else if (logic === 'exploit_wings') {
+    if (midRating < 78) { type = 'good'; uMod = 1.25; oMod = 0.90; outcome = `Their midfield cannot deal with your wide play. You get crosses in from both flanks all half!`; }
+    else if (defRating < 78) { const scored = Math.random() < 0.55; if (scored) { homeGoal = true; type = 'good'; outcome = `The wing play pays off! A brilliant cross is met with a diving header. GOAL!`; } else { type = 'good'; uMod = 1.2; outcome = `The wing overload creates constant danger. They struggle to cope with your crossing.`; } }
+    else { type = 'neutral'; uMod = 1.05; outcome = `Their defence handles the wide threat well. You need to find another way through.`; }
+  } else if (logic === 'drop_fullbacks') {
+    const stopped = Math.random() < 0.70;
+    if (stopped) { type = 'good'; oMod = 0.65; outcome = `Dropping the fullbacks removes their wide threat entirely. Solid, disciplined, effective.`; }
+    else { awayGoal = true; type = 'bad'; outcome = `Dropping back loses your width. ${opp.name || 'They'} dominate centrally and punish you through the middle.`; }
+  } else if (logic === 'long_balls_direct') {
+    if (hasTallStrikers) {
+      const worked = Math.random() < 0.55;
+      if (worked) { type = 'good'; uMod = 1.15; outcome = `Your striker holds it up brilliantly! The direct approach relieves pressure and creates a chance!`; }
+      else { type = 'neutral'; oMod = 1.05; outcome = `Some second balls won but you lose possession too easily with the direct approach.`; }
+    } else {
+      const worked = Math.random() < 0.35;
+      if (worked) { type = 'neutral'; oMod = 0.95; outcome = `The long balls relieve pressure temporarily but your strikers struggle to hold it up.`; }
+      else { oMod = 1.10; type = 'neutral'; outcome = `Without aerial ability, the long ball game simply gives ${opp.name || 'them'} possession back.`; }
+    }
+  } else if (logic === 'respond_aggressively') {
+    if (userAtt > 80) {
+      const scored = Math.random() < 0.65;
+      if (scored) { homeGoal = true; type = 'good'; outcome = `The aggressive response works! You equalise quickly and dominate the next phase!`; }
+      else { type = 'neutral'; uMod = 1.15; oMod = 0.90; outcome = `Aggressive and intense — you have the better of the exchanges but the goal won't come.`; }
+    } else {
+      const scored = Math.random() < 0.45;
+      if (scored) { homeGoal = true; type = 'good'; outcome = `The aggressive approach catches them off-guard and you equalise! Brave and effective.`; }
+      else { awayGoal = true; type = 'bad'; outcome = `The aggression leaves gaps. ${opp.name || 'They'} have too much quality and extend their lead.`; }
+    }
+  } else {
+    type = 'neutral';
+    uMod = 1.05;
+    outcome = 'Your tactical instruction is relayed — the team responds and adjusts their shape.';
+  }
+
+  return { homeGoal, awayGoal, uMod, oMod, type, outcome };
+}
+
+// Pick 5-8 events spread across match phases (min 4)
 function selectTacticalMoments(userRatings, opponent) {
+  const numEvents = 5 + Math.floor(Math.random() * 4); // 5-8 total
   const shuffled = shuffle([...MATCH_EVENTS]);
-  const e1 = shuffled[0];
-  const e2 = shuffled.find(e => e.id !== e1.id && e.category !== e1.category) || shuffled[1];
-  return [e1.id, e2.id];
+  const chosen = [];
+  const usedCategories = new Set();
+  for (let i = 0; i < shuffled.length && chosen.length < numEvents; i++) {
+    const ev = shuffled[i];
+    // Limit to 2 per category for variety
+    const catCount = chosen.filter(e => e.category === ev.category).length;
+    if (catCount < 2) chosen.push(ev);
+  }
+  return chosen.map(e => e.id);
 }
 
 function resolveEventEffect(option, homeScoreAtTime, awayScoreAtTime) {
@@ -2905,6 +3232,24 @@ function showNextMatch() {
 
   const momentTypes = selectTacticalMoments(userR, opponent);
 
+  // Assign minutes to each tactical moment, distributed across 90 mins
+  // Phases: 1-44 (first half: 2-3 events), 46-75 (second half: 2-3 events), 76-90 (late: 1-2 events)
+  const phaseWindows = [
+    { min: 8,  max: 40 },
+    { min: 25, max: 44 },
+    { min: 46, max: 60 },
+    { min: 55, max: 72 },
+    { min: 62, max: 75 },
+    { min: 76, max: 84 },
+    { min: 78, max: 88 },
+    { min: 82, max: 90 },
+  ];
+  const scheduledMoments = momentTypes.map((id, i) => {
+    const win = phaseWindows[i] || phaseWindows[phaseWindows.length - 1];
+    const min = win.min + Math.floor(Math.random() * (win.max - win.min + 1));
+    return { id, minute: min };
+  }).sort((a, b) => a.minute - b.minute);
+
   ACTIVE_MATCH = {
     opponent,
     baseXG_u: uXG, baseXG_o: oXG,
@@ -2913,6 +3258,9 @@ function showNextMatch() {
     allEvents: [],
     phase: 0,
     momentTypes,
+    scheduledMoments,   // [{id, minute}] sorted by minute
+    momentIndex: 0,     // which moment we're on next
+    currentMinute: 0,
     usedMoments: new Set(momentTypes),
     fastForward: false,
     onComplete: (result) => {
@@ -2931,8 +3279,10 @@ function showNextMatch() {
         t.knockoutResults.push({ ...result, opponentId: opponent.id, opponent });
         if (result.won || result.penaltyWin) {
           const rounds = ['r16','qf','sf','final'];
-          if (t.phase === 'final') showContinueButton(() => showWinScreen(result, opponent));
-          else {
+          if (t.phase === 'final') {
+            // Final won — show championship screen immediately
+            showWinScreen(result, opponent);
+          } else {
             t.phase = rounds[rounds.indexOf(t.phase) + 1];
             updateTournamentHeader();
             showContinueButton(() => showNextMatch());
@@ -3021,17 +3371,43 @@ function runMatchPhase() {
   m.homeScore += phaseHome;
   m.awayScore += phaseAway;
 
-  // Reveal events, then either show tactical moment or end match
+  // Find any scheduled moments in this phase's minute range
+  const phaseMoments = m.scheduledMoments.filter(sm =>
+    sm.minute >= minStart && sm.minute <= minEnd && !m.usedMoments_shown?.has(sm.id)
+  );
+
+  // Reveal events, then show any tactical moments for this phase, then continue
   revealPhaseEvents(phaseEvents, m.homeScore, m.awayScore, () => {
     m.phase++;
-    if (m.phase < 3) {
-      // Show tactical moment between phases
-      showTacticalMoment(m.momentTypes[m.phase - 1], m.homeScore, m.awayScore, () => {
-        runMatchPhase();
+    // Show moments for this phase sequentially
+    const showPhaseMoments = (idx, done) => {
+      if (idx >= phaseMoments.length) { done(); return; }
+      const sm = phaseMoments[idx];
+      if (!m.usedMoments_shown) m.usedMoments_shown = new Set();
+      m.usedMoments_shown.add(sm.id);
+      showTacticalMoment(sm.id, m.homeScore, m.awayScore, () => {
+        showPhaseMoments(idx + 1, done);
       });
-    } else {
-      finishMatch();
-    }
+    };
+    showPhaseMoments(0, () => {
+      if (m.phase < 3) {
+        runMatchPhase();
+      } else {
+        // Show any remaining moments not yet shown (scheduled after phase 3)
+        const remaining = m.scheduledMoments.filter(sm =>
+          !m.usedMoments_shown?.has(sm.id)
+        );
+        const showRemaining = (idx, done) => {
+          if (idx >= remaining.length) { done(); return; }
+          if (!m.usedMoments_shown) m.usedMoments_shown = new Set();
+          m.usedMoments_shown.add(remaining[idx].id);
+          showTacticalMoment(remaining[idx].id, m.homeScore, m.awayScore, () => {
+            showRemaining(idx + 1, done);
+          });
+        };
+        showRemaining(0, finishMatch);
+      }
+    });
   });
 }
 
@@ -3150,42 +3526,68 @@ function revealPhaseEvents(events, homeTotal, awayTotal, onComplete) {
 function showTacticalMoment(eventId, homeScore, awayScore, onComplete) {
   if (ACTIVE_MATCH.fastForward) { onComplete(); return; }
   const content = document.getElementById('tournament-content');
-  const eventDef = MATCH_EVENTS.find(e => e.id === eventId);
+
+  // Look for event in both MATCH_EVENTS and TACTICAL_DECISIONS
+  const eventDef = MATCH_EVENTS.find(e => e.id === eventId) || TACTICAL_DECISIONS.find(e => e.id === eventId);
   if (!eventDef) { onComplete(); return; }
 
-  const phaseIdx = ACTIVE_MATCH.phase;
-  const minute = PHASE_RANGES[phaseIdx][0];
+  // Find the scheduled minute for this event
+  const sm = (ACTIVE_MATCH.scheduledMoments || []).find(s => s.id === eventId);
+  const minute = sm ? sm.minute : (PHASE_RANGES[Math.min(ACTIVE_MATCH.phase, 2)][0]);
+  const isTactical = !!TACTICAL_DECISIONS.find(e => e.id === eventId);
+  const score = { home: homeScore, away: awayScore };
+  const opp = ACTIVE_MATCH.opponent;
+
+  // Build situation text
+  let situationText = eventDef.situation || '';
+  if (isTactical && eventDef.titleFn) {
+    situationText = eventDef.titleFn(minute, score, opp);
+  }
 
   const momentEl = document.createElement('div');
   momentEl.className = 'tactical-moment';
-  momentEl.id = 'tactical-moment';
+  momentEl.id = 'tactical-moment-' + eventId;
   momentEl.innerHTML = `
     <div class="tactical-moment-header">
-      <span class="tactical-moment-badge">Tactical Decision</span>
+      <span class="tactical-moment-badge">${isTactical ? 'Tactical Decision' : 'Match Situation'}</span>
       <span class="tactical-moment-min">${minute}'</span>
+      <span style="font-size:0.72rem;color:var(--text-muted);margin-left:auto">${homeScore} – ${awayScore}</span>
     </div>
-    <div class="tactical-moment-title">${eventDef.situation}</div>
-    <div class="choice-buttons" id="choice-buttons">
+    <div class="tactical-moment-title">${situationText}</div>
+    <div class="choice-buttons" id="choice-buttons-${eventId}">
       ${eventDef.options.map((opt, i) => `
-        <button class="btn-choice" onclick="pickTacticalChoice('${eventId}', ${i}, ${homeScore}, ${awayScore})">
+        <button class="btn-choice" onclick="pickTacticalChoice('${eventId}', ${i}, ${homeScore}, ${awayScore}, ${isTactical})">
           <span class="btn-choice-title">${opt.text}</span>
+          ${opt.desc ? `<span class="btn-choice-desc">${opt.desc}</span>` : ''}
         </button>
       `).join('')}
     </div>
-    <div id="choice-result" style="display:none"></div>
+    <div id="choice-result-${eventId}" style="display:none"></div>
   `;
   content.appendChild(momentEl);
 
   ACTIVE_MATCH._momentCallback = onComplete;
+  ACTIVE_MATCH._currentMomentId = eventId;
 }
 
-function pickTacticalChoice(eventId, optionIdx, homeScore, awayScore) {
-  const eventDef = MATCH_EVENTS.find(e => e.id === eventId);
+function pickTacticalChoice(eventId, optionIdx, homeScore, awayScore, isTactical) {
+  const eventDef = MATCH_EVENTS.find(e => e.id === eventId) || TACTICAL_DECISIONS.find(e => e.id === eventId);
   if (!eventDef) return;
-  document.querySelectorAll('.btn-choice').forEach(b => b.disabled = true);
+
+  // Disable all choice buttons in this moment
+  const btnsEl = document.getElementById('choice-buttons-' + eventId);
+  if (btnsEl) btnsEl.querySelectorAll('.btn-choice').forEach(b => b.disabled = true);
 
   const option = eventDef.options[optionIdx];
-  const effect = resolveEventEffect(option, homeScore, awayScore);
+  let effect;
+
+  if (isTactical && option.logic) {
+    // Use opponent-aware tactical resolution
+    const r = resolveTacticalDecision(option.logic, ACTIVE_MATCH.opponent, ACTIVE_MATCH.homeScore, ACTIVE_MATCH.awayScore);
+    effect = { uMod: r.uMod, oMod: r.oMod, homeGoal: r.homeGoal, awayGoal: r.awayGoal, outcome: r.outcome, type: r.type };
+  } else {
+    effect = resolveEventEffect(option, homeScore, awayScore);
+  }
 
   // Apply xG modifiers
   ACTIVE_MATCH.xGMod_u *= effect.uMod || 1;
@@ -3196,27 +3598,27 @@ function pickTacticalChoice(eventId, optionIdx, homeScore, awayScore) {
   if (effect.awayGoal) awardGoal('away');
 
   // Build outcome text with score
-  let outcomeText = effect.outcome;
+  let outcomeText = effect.outcome || option.outcome || '';
   if (effect.homeGoal || effect.awayGoal) {
     outcomeText += ' Score: ' + ACTIVE_MATCH.homeScore + '–' + ACTIVE_MATCH.awayScore + '.';
   }
 
-  const resultEl = document.getElementById('choice-result');
+  const resultEl = document.getElementById('choice-result-' + eventId);
   if (resultEl) {
     resultEl.style.display = 'block';
-    resultEl.className = `choice-result ${effect.type}`;
+    resultEl.className = `choice-result ${effect.type || 'neutral'}`;
     resultEl.textContent = outcomeText;
   }
 
   const cb = ACTIVE_MATCH._momentCallback;
   setTimeout(() => {
-    const momentEl = document.getElementById('tactical-moment');
+    const momentEl = document.getElementById('tactical-moment-' + eventId);
     if (momentEl) momentEl.style.opacity = '0';
     setTimeout(() => {
       if (momentEl) momentEl.remove();
       if (cb) cb();
     }, 300);
-  }, 1800);
+  }, 2000);
 }
 
 function finishMatch() {
@@ -3278,10 +3680,12 @@ function fastForwardMatch() {
     let pA = Math.min(poissonRandom(phaseXG_o), 4);
     m.homeScore += pH; m.awayScore += pA;
 
-    // Auto-pick tactical moment (neutral/middle option)
-    const mId = m.momentTypes[ph];
-    if (ph < 2 && mId) {
-      const ed = MATCH_EVENTS.find(e => e.id === mId);
+    // Auto-pick all tactical moments in this phase range (neutral/middle option)
+    const phaseMoments = (m.scheduledMoments || []).filter(sm =>
+      sm.minute >= minStart && sm.minute <= minEnd
+    );
+    phaseMoments.forEach(sm => {
+      const ed = MATCH_EVENTS.find(e => e.id === sm.id);
       if (ed) {
         const midIdx = Math.floor(ed.options.length / 2);
         const eff = resolveEventEffect(ed.options[midIdx], m.homeScore, m.awayScore);
@@ -3290,7 +3694,7 @@ function fastForwardMatch() {
         if (eff.homeGoal) m.homeScore++;
         if (eff.awayGoal) m.awayScore++;
       }
-    }
+    });
     const phEvents = generatePhaseEvents(pH, pA, m.opponent, minStart, minEnd);
     m.allEvents.push(...phEvents);
   }
@@ -3421,34 +3825,72 @@ function showWinScreen(result, opponent) {
   const r = STATE.teamRatings;
   const allPlayers = Object.values(STATE.squad);
   const best = allPlayers.reduce((a,b) => a.rating > b.rating ? a : b);
+  const worst = allPlayers.reduce((a,b) => a.rating < b.rating ? a : b);
+  const totalWins = t.wins + (result && result.won ? 1 : 0);
+  const totalDraws = t.draws + (result && result.drew ? 1 : 0);
   const totalGF = t.gf + (result ? result.homeScore : 0);
   const totalGA = t.ga + (result ? result.awayScore : 0);
-  const record = `${t.wins + (result&&result.won?1:0)}W ${t.draws + (result&&result.drew?1:0)}D ${t.losses}L`;
+  const record = `${totalWins}W ${totalDraws}D ${t.losses}L`;
+  const finalScoreStr = result && opponent ? `${result.homeScore}–${result.awayScore} vs ${opponent.name}` : '';
 
-  document.getElementById('win-subhead').textContent =
-    `You conquered Europe. ${record} across the tournament.`;
+  const screenEl = document.getElementById('screen-win');
+  screenEl.style.background = 'linear-gradient(160deg, #001470 0%, #0020a0 40%, #0a0a00 100%)';
 
-  if (result && opponent) {
-    document.getElementById('win-final-score').innerHTML = `
-      <div class="result-score-team home">Your XI</div>
-      <div class="result-score-nums">
-        <span style="color:var(--win-color)">${result.homeScore}</span>
-        <span class="result-score-sep">–</span>
-        <span style="color:var(--loss-color)">${result.awayScore}</span>
+  document.getElementById('win-content').innerHTML = `
+    <div class="champion-banner">🏆 YOU ARE THE SUPER LEAGUE CHAMPION 🏆</div>
+    ${finalScoreStr ? `
+    <div class="champion-score-display">
+      <div style="flex:1;text-align:right;font-size:0.85rem;color:rgba(255,255,255,0.7);">Your XI</div>
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:3.2rem;color:var(--yellow);display:flex;gap:8px;align-items:center;">
+        <span style="color:#22c55e">${result.homeScore}</span>
+        <span style="font-size:1.5rem;color:rgba(255,255,255,0.4)">–</span>
+        <span style="color:#ef4444">${result.awayScore}</span>
       </div>
-      <div class="result-score-team">${opponent.name}</div>
-    `;
-  }
-
-  document.getElementById('win-stats').innerHTML = `
-    <div class="result-stat-card"><div class="result-stat-label">Best Player</div><div class="result-stat-value gold">${best.name}</div></div>
-    <div class="result-stat-card"><div class="result-stat-label">Tournament Record</div><div class="result-stat-value">${record}</div></div>
-    <div class="result-stat-card"><div class="result-stat-label">Goals Scored</div><div class="result-stat-value gold">${totalGF}</div></div>
-    <div class="result-stat-card"><div class="result-stat-label">Goals Conceded</div><div class="result-stat-value">${totalGA}</div></div>
-    <div class="result-stat-card"><div class="result-stat-label">Attack Rating</div><div class="result-stat-value">${r.attack}</div></div>
-    <div class="result-stat-card"><div class="result-stat-label">Defence Rating</div><div class="result-stat-value">${r.defence}</div></div>
-    <div class="result-stat-card"><div class="result-stat-label">Midfield Rating</div><div class="result-stat-value">${r.midfield}</div></div>
-    <div class="result-stat-card"><div class="result-stat-label">Overall Rating</div><div class="result-stat-value gold">${r.overall}</div></div>
+      <div style="flex:1;font-size:0.85rem;color:rgba(255,255,255,0.7);">${opponent.name}</div>
+    </div>` : ''}
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:clamp(1.1rem,2.5vw,1.4rem);color:rgba(255,255,255,0.6);letter-spacing:0.12em;text-align:center;">
+      TOURNAMENT RECORD: ${record} · ${totalGF} GF / ${totalGA} GA
+    </div>
+    <div class="champion-stat-grid">
+      <div class="champion-stat-card">
+        <div class="champion-stat-label">⭐ Best Player</div>
+        <div class="champion-stat-value gold">${best.name}</div>
+        <div style="font-size:0.75rem;color:rgba(255,255,255,0.4);margin-top:2px;">Rating ${best.rating}</div>
+      </div>
+      <div class="champion-stat-card">
+        <div class="champion-stat-label">😬 Weak Link</div>
+        <div class="champion-stat-value">${worst.name}</div>
+        <div style="font-size:0.75rem;color:rgba(255,255,255,0.4);margin-top:2px;">Rating ${worst.rating}</div>
+      </div>
+      <div class="champion-stat-card">
+        <div class="champion-stat-label">Formation</div>
+        <div class="champion-stat-value gold">${STATE.formation || '?'}</div>
+      </div>
+      <div class="champion-stat-card">
+        <div class="champion-stat-label">Overall Rating</div>
+        <div class="champion-stat-value gold">${r.overall}</div>
+      </div>
+      <div class="champion-stat-card">
+        <div class="champion-stat-label">Attack</div>
+        <div class="champion-stat-value">${r.attack}</div>
+      </div>
+      <div class="champion-stat-card">
+        <div class="champion-stat-label">Defence</div>
+        <div class="champion-stat-value">${r.defence}</div>
+      </div>
+      <div class="champion-stat-card">
+        <div class="champion-stat-label">Goals Scored</div>
+        <div class="champion-stat-value gold">${totalGF}</div>
+      </div>
+      <div class="champion-stat-card">
+        <div class="champion-stat-label">Goals Conceded</div>
+        <div class="champion-stat-value">${totalGA}</div>
+      </div>
+    </div>
+    <div class="result-actions" style="margin-top:8px;">
+      <button class="btn btn-gold btn-lg" onclick="restartGame()" style="font-size:1.1rem;">🔁 Draft Again</button>
+      <button class="btn-share" id="win-share-btn" onclick="copyResult('win')">Copy Result</button>
+    </div>
   `;
   showScreen('win');
 }
@@ -3470,8 +3912,16 @@ function showLossScreen(result, opponent) {
     if (lr.lost && (!worstLoss || (lr.awayScore - lr.homeScore) > (worstLoss.awayScore - worstLoss.homeScore))) worstLoss = lr;
   });
 
-  document.getElementById('loss-subhead').textContent =
-    `Eliminated in the ${roundLabel}. ${record} · ${t.gf} scored, ${t.ga} conceded.`;
+  const lossMsg = t.phase === 'final'
+    ? `Runner Up — So Close! Lost the Final. ${record} · ${t.gf} scored, ${t.ga} conceded.`
+    : `Eliminated in the ${roundLabel}. ${record} · ${t.gf} scored, ${t.ga} conceded.`;
+  document.getElementById('loss-subhead').textContent = lossMsg;
+
+  // Update headline for final loss
+  if (t.phase === 'final') {
+    const headline = document.querySelector('#loss-content .result-headline');
+    if (headline) headline.textContent = 'Runner Up.';
+  }
 
   if (result && opponent) {
     document.getElementById('loss-final-score').innerHTML = `
@@ -3510,8 +3960,8 @@ function copyResult(screen) {
   const best = allPlayers.reduce((a,b) => a.rating > b.rating ? a : b);
   const worst = allPlayers.reduce((a,b) => a.rating < b.rating ? a : b);
 
-  const roundLabels = { league:'Eliminated in League Phase', r16:'Eliminated in Round of 16', qf:'Eliminated in Quarter-Final', sf:'Eliminated in Semi-Final', final:screen==='win'?'Won the SuperLeague!':'Lost in the Final' };
-  const resultStr = screen === 'win' ? 'Won the SuperLeague!' : (roundLabels[t.phase] || 'Eliminated');
+  const roundLabels = { league:'Eliminated in League Phase', r16:'Eliminated in Round of 16', qf:'Eliminated in Quarter-Final', sf:'Eliminated in Semi-Final', final:screen==='win'?'Super League CHAMPION 🏆!':'Runner Up — Lost the Final' };
+  const resultStr = screen === 'win' ? 'Super League CHAMPION 🏆!' : (roundLabels[t.phase] || 'Eliminated');
 
   const text = [
     '⚽ SuperLeague Draft Result',
