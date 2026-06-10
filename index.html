@@ -183,11 +183,12 @@ h1, h2, h3 { font-family: 'Bebas Neue', sans-serif; letter-spacing: 0.04em; colo
 .start-hero-card {
   background: var(--blue);
   border-radius: 10px;
-  padding: 48px 48px 40px;
+  padding: 64px 48px 56px;
   width: 100%;
   position: relative;
   overflow: hidden;
-  margin-bottom: 16px;
+  display: flex; flex-direction: column;
+  align-items: center; gap: 36px;
 }
 .start-hero-card::before {
   content: '';
@@ -265,6 +266,8 @@ h1, h2, h3 { font-family: 'Bebas Neue', sans-serif; letter-spacing: 0.04em; colo
 }
 .formation-header {
   text-align: center;
+  width: 100%;
+  max-width: 900px;
 }
 .formation-header h2 {
   font-size: clamp(1.8rem, 4vw, 2.4rem);
@@ -276,10 +279,11 @@ h1, h2, h3 { font-family: 'Bebas Neue', sans-serif; letter-spacing: 0.04em; colo
 }
 .formation-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-  gap: 16px;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 20px;
   width: 100%;
   max-width: 900px;
+  margin: 0 auto;
 }
 .formation-card {
   background: var(--white);
@@ -316,7 +320,7 @@ h1, h2, h3 { font-family: 'Bebas Neue', sans-serif; letter-spacing: 0.04em; colo
 }
 .formation-name {
   font-family: 'Bebas Neue', sans-serif;
-  font-size: 2rem; letter-spacing: 1px;
+  font-size: 2.2rem; letter-spacing: 1px;
   color: var(--text-dark);
 }
 .formation-mini-pitch {
@@ -615,16 +619,16 @@ h1, h2, h3 { font-family: 'Bebas Neue', sans-serif; letter-spacing: 0.04em; colo
 }
 .card-rating {
   font-family: 'Bebas Neue', sans-serif;
-  font-size: 3.4rem; font-weight: 400; line-height: 1;
+  font-size: 3.5rem; font-weight: 400; line-height: 1;
   color: var(--tier-color, var(--tier-starter));
   margin-top: 10px;
 }
 .card-pos-badge {
   display: inline-block;
   font-family: 'Barlow Condensed', sans-serif;
-  font-size: 0.62rem; font-weight: 700; letter-spacing: 0.1em;
+  font-size: 0.7rem; font-weight: 700; letter-spacing: 0.1em;
   text-transform: uppercase;
-  padding: 2px 8px; border-radius: 10px;
+  padding: 3px 10px; border-radius: 10px;
   color: #fff;
   margin-bottom: 2px;
 }
@@ -634,9 +638,10 @@ h1, h2, h3 { font-family: 'Bebas Neue', sans-serif; letter-spacing: 0.04em; colo
 .card-pos-badge.pos-fwd  { background: #dc2626; }
 .card-name {
   font-family: 'Barlow Condensed', sans-serif;
-  font-weight: 700; font-size: 1rem;
+  font-weight: 700; font-size: 1.15rem;
   color: var(--text-dark); line-height: 1.2;
-  padding: 0 8px;
+  padding: 0 10px;
+  white-space: normal; word-break: break-word;
 }
 .card-pos {
   font-size: 0.7rem; font-weight: 600;
@@ -644,11 +649,11 @@ h1, h2, h3 { font-family: 'Bebas Neue', sans-serif; letter-spacing: 0.04em; colo
   color: var(--text-muted);
 }
 .card-team {
-  font-size: 0.72rem; color: var(--text-muted);
-  margin-top: auto; padding: 0 8px;
-  line-height: 1.4;
+  font-size: 0.78rem; color: var(--text-dark);
+  margin-top: auto; padding: 0 10px;
+  line-height: 1.4; font-weight: 500;
 }
-.card-team span { display: block; color: var(--text-muted); font-size: 0.62rem; }
+.card-team span { display: block; color: var(--text-muted); font-size: 0.7rem; font-weight: 400; }
 
 /* ═══════════════════════════════════════════
    4. TEAM SUMMARY SCREEN
@@ -826,10 +831,10 @@ h1, h2, h3 { font-family: 'Bebas Neue', sans-serif; letter-spacing: 0.04em; colo
 }
 .match-event {
   display: flex; align-items: flex-start; gap: 10px;
-  font-size: 0.82rem; color: var(--text-muted);
+  font-size: 0.92rem; color: var(--text-muted);
   opacity: 0;
   animation: eventIn 0.4s ease forwards;
-  line-height: 1.4;
+  line-height: 1.5;
 }
 @keyframes eventIn {
   from { opacity: 0; transform: translateX(-12px); }
@@ -838,11 +843,50 @@ h1, h2, h3 { font-family: 'Bebas Neue', sans-serif; letter-spacing: 0.04em; colo
 .match-event-min {
   font-family: 'Barlow Condensed', sans-serif;
   font-weight: 700; color: var(--blue);
-  min-width: 32px; font-size: 0.8rem;
+  min-width: 32px; font-size: 0.85rem;
+  flex-shrink: 0;
 }
-.match-event.goal { color: var(--text-dark); }
+.match-event.goal {
+  color: var(--text-dark);
+  font-weight: 700;
+  font-size: 1rem;
+  background: rgba(245,216,74,0.08);
+  border-left: 3px solid var(--yellow-dark);
+  padding: 4px 8px;
+  border-radius: 0 4px 4px 0;
+}
 .match-event.goal .match-event-min { color: var(--yellow-dark); }
-.match-event.star { color: var(--yellow-dark); }
+.match-event.star { color: var(--yellow-dark); font-weight: 600; }
+.match-event.away-goal {
+  color: var(--text-dark);
+  font-weight: 700;
+  font-size: 1rem;
+  background: rgba(239,68,68,0.06);
+  border-left: 3px solid var(--loss-color);
+  padding: 4px 8px;
+  border-radius: 0 4px 4px 0;
+}
+.match-event.away-goal .match-event-min { color: var(--loss-color); }
+.live-score-strip {
+  display: flex; align-items: center; justify-content: center;
+  gap: 12px;
+  background: var(--blue);
+  color: #fff;
+  padding: 8px 20px;
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.3rem;
+  letter-spacing: 2px;
+}
+.live-score-strip-label {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 0.7rem; font-weight: 700;
+  letter-spacing: 0.15em; text-transform: uppercase;
+  color: rgba(255,255,255,0.6);
+}
+#live-score {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.4rem; color: var(--yellow);
+}
 .match-summary-text {
   padding: 12px 20px 16px;
   font-size: 0.85rem; color: var(--text-muted);
@@ -1150,40 +1194,12 @@ h1, h2, h3 { font-family: 'Bebas Neue', sans-serif; letter-spacing: 0.04em; colo
 <div id="screen-start" class="screen active">
   <div class="start-content">
     <div class="start-hero-card">
-      <div class="start-eyebrow">
-        <div class="start-eyebrow-dot"></div>
-        Season 1 &nbsp;·&nbsp; Now open
-      </div>
       <div class="start-title">
         Super<br>League<br><em>Draft</em>
       </div>
-      <div class="start-tagline">
-        Pick your XI from 30 legendary squads. Navigate the tournament round by round. Lift the cup.
-      </div>
       <button class="btn btn-gold btn-lg" onclick="goToFormation()">
-        Start your Draft
+        Start Game
       </button>
-    </div>
-    <div class="start-features">
-      <div class="start-feature">
-        <div class="start-feature-icon">⚡</div>
-        <div class="start-feature-label">Random Draft</div>
-      </div>
-      <div class="start-feature">
-        <div class="start-feature-icon">🏆</div>
-        <div class="start-feature-label">Tournament</div>
-      </div>
-      <div class="start-feature">
-        <div class="start-feature-icon">🎲</div>
-        <div class="start-feature-label">Pure Luck</div>
-      </div>
-      <div class="start-feature">
-        <div class="start-feature-icon">⭐</div>
-        <div class="start-feature-label">Legends</div>
-      </div>
-    </div>
-    <div class="start-credits">
-      30 legendary squads · 660+ players · Infinite replays
     </div>
   </div>
 </div>
