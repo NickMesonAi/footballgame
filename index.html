@@ -1285,6 +1285,71 @@ h1, h2, h3 { font-family: 'Bebas Neue', sans-serif; letter-spacing: 0.04em; colo
   .match-teams-bar { padding: 14px 16px; gap: 10px; }
   .match-score-num { font-size: 2rem; }
 }
+
+/* ── Match Question Panel ── */
+.match-question-panel {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 20px;
+  margin-top: 16px;
+}
+.mq-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+.mq-type {
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 3px 10px;
+  border-radius: 20px;
+}
+.mq-type.attacking { background: rgba(34,197,94,0.2); color: #22c55e; }
+.mq-type.defending { background: rgba(239,68,68,0.2); color: #ef4444; }
+.mq-counter { font-size: 0.75rem; color: var(--text-muted); }
+.mq-situation {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 16px;
+  line-height: 1.4;
+}
+.mq-buttons { display: flex; flex-direction: column; gap: 8px; }
+.btn-mq {
+  background: var(--bg-panel);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  color: var(--text-primary);
+  padding: 12px 16px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+.btn-mq:hover:not(:disabled) { border-color: var(--accent-blue); background: rgba(0,180,255,0.08); }
+.btn-mq:disabled { cursor: default; opacity: 0.7; }
+.btn-mq.correct { border-color: #22c55e; background: rgba(34,197,94,0.15); color: #22c55e; }
+.btn-mq.wrong { border-color: #ef4444; background: rgba(239,68,68,0.1); }
+.mq-outcome { margin-top: 14px; padding: 12px; background: var(--bg-panel); border-radius: 8px; }
+.mq-badge {
+  display: inline-block;
+  font-size: 0.8rem;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 4px;
+  margin-bottom: 6px;
+}
+.mq-badge.goal { background: rgba(34,197,94,0.2); color: #22c55e; }
+.mq-badge.save { background: rgba(0,180,255,0.2); color: var(--accent-blue); }
+.mq-badge.concede { background: rgba(239,68,68,0.2); color: #ef4444; }
+.mq-badge.miss { background: rgba(255,255,255,0.1); color: var(--text-muted); }
+.mq-outcome-text { font-size: 0.85rem; color: var(--text-secondary); line-height: 1.5; }
+
 </style>
 </head>
 <body>
@@ -2206,10 +2271,10 @@ function startTournament() {
   t.qualified = false;
   t.knockoutRound = 0;
   t.knockoutResults = [];
-  // pick 8 random opponents
+  // pick 4 random opponents for group phase
   const pool = [...OPPONENT_TEAMS];
   shuffle(pool);
-  t.opponents = pool.slice(0, 8);
+  t.opponents = pool.slice(0, 4);
   showScreen('tournament');
   updateTournamentHeader();
   showNextMatch();
@@ -2231,975 +2296,235 @@ function updateTournamentHeader() {
 }
 
 /* ═══════════════════════════════════════════
-   66-EVENT MATCH POOL
+   MATCH QUESTION POOLS
 ═══════════════════════════════════════════ */
-const MATCH_EVENTS = [
-  // ── ATTACKING (10) ──
+const ATTACKING_QUESTIONS = [
   {
-    id: 'att_1v1_winger',
-    category: 'attacking',
-    situation: 'Your winger is 1v1 with the fullback. What do you do?',
+    id: 'atk_1v1_keeper',
+    situation: 'Your striker is through 1v1 with the keeper!',
     options: [
-      { text: 'Elastico', outcome: 'The elastico bamboozles the fullback — your winger cuts inside and whips a cross into the box. Clinical finish!', effect: { type: 'goal', team: 'home' } },
-      { text: 'Step over and drive', outcome: 'Quick step over and he drives past — he fires a low cross but it is cut out for a corner. Good pressure.', effect: { type: 'chance', uMod: 1.2, oMod: 1.0 } },
-      { text: 'Rainbow flick', outcome: 'Ambitious rainbow flick — he gets tangled and the defender clears easily. Flashy but wasteful.', effect: { type: 'miss' } },
+      { text: 'Chip the keeper', outcome: 'Beautiful chip lofts over the keeper and into the net!', scores: true },
+      { text: 'Power shot low', outcome: 'Driven low into the corner — the keeper had no chance!', scores: true },
+      { text: 'Try to dribble round him', outcome: 'Too many touches — the keeper smothers the ball. Wasted chance.', scores: false },
     ]
   },
   {
-    id: 'att_1v1_keeper',
-    category: 'attacking',
-    situation: 'Your striker is 1v1 with the keeper. What do you do?',
+    id: 'atk_freekick',
+    situation: 'Free kick 25 yards out — dangerous position!',
     options: [
-      { text: 'Chip', outcome: 'Delicious lofted chip over the keeper — the ball loops into the net. A moment of genius.', effect: { type: 'goal_chance', prob: 0.72, team: 'home' } },
-      { text: 'Finesse shot', outcome: 'Smooth, placed finesse shot — curls into the bottom corner. The keeper dives the wrong way. Goal!', effect: { type: 'goal', team: 'home' } },
-      { text: 'Dribble around him', outcome: 'He tries to round the keeper but takes too many touches. The defender recovers and hacks it clear.', effect: { type: 'miss' } },
+      { text: 'Curl top corner', outcome: 'Dips beautifully over the wall and into the top corner!', scores: true },
+      { text: 'Drive it low', outcome: 'Thunderbolt drives under the wall and beats the keeper!', scores: true },
+      { text: 'Dummy run, tap-in attempt', outcome: 'The dummy run is spotted — defenders cover and it comes to nothing.', scores: false },
     ]
   },
   {
-    id: 'att_through_on_goal',
-    category: 'attacking',
-    situation: 'You are through on goal but a defender is catching up. What do you do?',
+    id: 'atk_header',
+    situation: 'Header chance at the back post from a cross!',
     options: [
-      { text: 'Shoot early', outcome: 'Strikes early before the defender gets across — it arrows low into the corner. Great composure under pressure!', effect: { type: 'goal', team: 'home' } },
-      { text: 'Cut inside', outcome: 'He cuts inside creating a better angle, gets his shot off but the keeper makes a good low save. Unlucky.', effect: { type: 'chance', uMod: 1.15, oMod: 1.0 } },
-      { text: 'Square it to a teammate', outcome: 'Squares it across the box — the defender stretches and deflects it wide. A great chance gone.', effect: { type: 'miss' } },
+      { text: 'Powerful downward header', outcome: 'Thumping header — crashes off the ground and in!', scores: true },
+      { text: 'Glance it into the far corner', outcome: 'Glancing header redirects the cross — the keeper is helpless!', scores: true },
+      { text: 'Try to chest it down first', outcome: 'He takes too long — the cross is cleared before he can shoot.', scores: false },
     ]
   },
   {
-    id: 'att_cam_edge',
-    category: 'attacking',
-    situation: 'Your CAM receives the ball on the edge of the box. What do you do?',
+    id: 'atk_penalty',
+    situation: 'PENALTY! Your chance to score from the spot!',
     options: [
-      { text: 'Long shot', outcome: 'Steps back and smashes it from 22 yards — the keeper is rooted. It bends beautifully into the top corner!', effect: { type: 'goal_chance', prob: 0.55, team: 'home' } },
-      { text: 'Threaded pass through the lines', outcome: 'A perfectly threaded ball finds the striker in behind — he slots it calmly past the keeper!', effect: { type: 'goal', team: 'home' } },
-      { text: 'Fake shot and turn', outcome: 'Fake shot tricks the defender — he turns and pings it wide. Good build-up but the cross is over-hit.', effect: { type: 'chance', uMod: 1.1, oMod: 1.0 } },
+      { text: 'Place it in the corner', outcome: 'Coolly placed into the corner — the keeper went the wrong way!', scores: true },
+      { text: 'Power it down the middle', outcome: 'Hit with venom straight down the middle as the keeper dives — GOAL!', scores: true },
+      { text: 'Cheeky Panenka chip', outcome: 'The Panenka... keeper stays put and catches it easily. Embarrassing.', scores: false },
     ]
   },
   {
-    id: 'att_back_to_goal',
-    category: 'attacking',
-    situation: 'Your striker has his back to goal. What do you do?',
+    id: 'atk_edge_box',
+    situation: 'Your striker receives it on the edge of the box!',
     options: [
-      { text: 'Lay it off and spin', outcome: 'He lays it off then spins brilliantly — the return pass finds him in space and he rifles it home!', effect: { type: 'goal', team: 'home' } },
-      { text: 'Turn and shoot', outcome: 'Sharp half-turn and he gets a shot away — but the keeper smothers it at his feet. Brave goalkeeping.', effect: { type: 'save' } },
-      { text: 'Shield and wait for support', outcome: 'Smart shielding — he holds up play perfectly and the team builds a dangerous attack. Good xG.', effect: { type: 'chance', uMod: 1.25, oMod: 1.0 } },
+      { text: 'First-time shot', outcome: 'First-time strike catches the keeper off guard — top corner!', scores: true },
+      { text: 'Take a touch and shoot', outcome: 'Takes a touch and curls it — goalkeeper can only watch it go in!', scores: true },
+      { text: 'Try to cut inside for a better angle', outcome: 'Too clever — he takes too long and the chance is gone.', scores: false },
     ]
   },
   {
-    id: 'att_byline',
-    category: 'attacking',
-    situation: 'Your winger reaches the byline. What do you do?',
+    id: 'atk_cross_unmarked',
+    situation: 'Cross into the box — your attacker is completely unmarked!',
     options: [
-      { text: 'Cut back to the penalty spot', outcome: 'Perfect cut-back rolls to the penalty spot — your midfielder arrives late and hammers it in!', effect: { type: 'goal', team: 'home' } },
-      { text: 'Low cross to near post', outcome: 'Driven near-post cross is flicked goalward — the keeper palms it onto the post. So close!', effect: { type: 'chance', uMod: 1.2, oMod: 1.0 } },
-      { text: 'Driven shot from tight angle', outcome: 'He tries his luck from the tight angle — the keeper is equal to it, catches comfortably.', effect: { type: 'miss' } },
+      { text: 'Volley it first time', outcome: 'Sweet volley — rockets into the net!', scores: true },
+      { text: 'Chest down then finish', outcome: 'Controls on the chest, swivels, and drills it in!', scores: true },
+      { text: 'Head it early', outcome: 'Gets under the ball — his header loops wide.', scores: false },
     ]
   },
   {
-    id: 'att_overlap',
-    category: 'attacking',
-    situation: 'Your fullback overlaps down the wing into space. What do you do?',
+    id: 'atk_counter_2v1',
+    situation: 'Counter attack! 2v1 — you against the last defender!',
     options: [
-      { text: 'Cross first time', outcome: 'Whips in a first-time cross — your striker loses his marker and heads it firmly into the net!', effect: { type: 'goal_chance', prob: 0.60, team: 'home' } },
-      { text: 'Pass inside to the midfielder', outcome: 'Cuts it back to the midfielder who shifts and fires — a deflection takes it wide. Corner.', effect: { type: 'chance', uMod: 1.15, oMod: 1.0 } },
-      { text: 'Keep running and shoot', outcome: 'He keeps running but the angle is too tight — his shot is straight at the keeper.', effect: { type: 'miss' } },
+      { text: 'Slip the through ball', outcome: 'Perfect through ball — your striker slots it home!', scores: true },
+      { text: 'Shoot early before the defender closes', outcome: 'Pulls the trigger early — low drive into the corner!', scores: true },
+      { text: 'Try to dribble all the way through', outcome: 'Defender reads it, gets a foot in, and the chance is gone.', scores: false },
     ]
   },
   {
-    id: 'att_half_chance',
-    category: 'attacking',
-    situation: 'Your striker gets a half-chance inside the box. What do you do?',
+    id: 'atk_setpiece_corner',
+    situation: 'Corner whipped in — bodies in the box!',
     options: [
-      { text: 'Power shot', outcome: 'Hit with everything he has — smashes through the keeper\'s hands and into the back of the net!', effect: { type: 'goal_chance', prob: 0.65, team: 'home' } },
-      { text: 'Finesse to the corner', outcome: 'A deft, placed finesse shot — curls around the keeper and nestles into the far corner!', effect: { type: 'goal', team: 'home' } },
-      { text: 'Take a touch first', outcome: 'Takes a touch to steady himself — but the defender slides in and blocks. Chance gone.', effect: { type: 'miss' } },
+      { text: 'Near post flick-on', outcome: 'Flick-on at the near post — your striker taps in at the far post!', scores: true },
+      { text: 'Back post attack', outcome: 'Powerful run to the back post — controlled finish!', scores: true },
+      { text: 'Wait at the penalty spot for a second ball', outcome: 'Keeper punches it clear and the move breaks down.', scores: false },
     ]
   },
   {
-    id: 'att_cut_inside',
-    category: 'attacking',
-    situation: 'Your winger cuts inside onto his stronger foot. What do you do?',
+    id: 'atk_winger_cutinside',
+    situation: 'Your winger cuts inside — shot on!',
     options: [
-      { text: 'Curl far post', outcome: 'Shapes to curl it far post — the ball bends perfectly into the top corner. Unstoppable!', effect: { type: 'goal', team: 'home' } },
-      { text: 'Slip the striker in', outcome: 'Slips a neat ball through for the striker — he is brought down in the box! Penalty to you!', effect: { type: 'goal_chance', prob: 0.80, team: 'home' } },
-      { text: 'Shoot near post', outcome: 'Tries near post but the keeper anticipates it — comfortable save. Predictable.', effect: { type: 'save' } },
+      { text: 'Curl it with the weaker foot', outcome: 'Cuts onto his weaker foot and curls it into the far corner!', scores: true },
+      { text: 'Cut back for the striker', outcome: 'Perfect cut-back — striker blasts it in!', scores: true },
+      { text: 'Keep dribbling toward goal', outcome: 'Takes one touch too many — defender gets back and blocks.', scores: false },
     ]
   },
   {
-    id: 'att_run_behind',
-    category: 'attacking',
-    situation: 'Your midfielder spots a run behind the defence. What do you do?',
+    id: 'atk_breakaway',
+    situation: 'Your forward is clean through on goal with pace!',
     options: [
-      { text: 'Thread the through ball', outcome: 'Exquisite through ball splits the defence — your striker is in and finishes with precision!', effect: { type: 'goal', team: 'home' } },
-      { text: 'Lofted pass over the top', outcome: 'Weighted lofted ball — the striker gets in behind but drags his shot wide. Good run, poor finish.', effect: { type: 'miss' } },
-      { text: 'Keep possession and probe', outcome: 'Patience — the ball is recycled and the attack is slowly built. Your xG improves.', effect: { type: 'chance', uMod: 1.1, oMod: 0.95 } },
+      { text: 'Shoot first time', outcome: 'First-time finish slides it under the keeper!', scores: true },
+      { text: 'Wait for keeper to commit', outcome: 'Waits, keeper dives early, rolls it into the empty net!', scores: true },
+      { text: 'Try an elaborate step-over', outcome: 'Gets tangled in his own feet — what a miss!', scores: false },
     ]
   },
+  {
+    id: 'atk_longshot',
+    situation: 'Your midfielder has space — long-range opportunity!',
+    options: [
+      { text: 'Hit it with everything', outcome: 'Thunderbolt from distance — screams into the top corner!', scores: true },
+      { text: 'Side-foot for accuracy', outcome: 'Side-footed perfectly into the bottom corner!', scores: true },
+      { text: 'Look for a better option', outcome: 'Passes sideways — the chance evaporates.', scores: false },
+    ]
+  },
+  {
+    id: 'atk_rebound',
+    situation: 'The keeper parries — first to the rebound!',
+    options: [
+      { text: 'Snap-shot the rebound', outcome: 'There to snap up the rebound — tucks it away!', scores: true },
+      { text: 'Poke it goalward with pace', outcome: 'Pokes it past the flailing keeper!', scores: true },
+      { text: 'Try to place it perfectly', outcome: 'Takes too long — defender smashes it clear.', scores: false },
+    ]
+  },
+];
 
-  // ── SHOOTING (10) ──
+const DEFENDING_QUESTIONS = [
   {
-    id: 'shoot_penalty_home',
-    category: 'shooting',
-    situation: 'You win a penalty! Where do you shoot?',
+    id: 'def_1v1_keeper',
+    situation: 'Their striker is through 1v1 with your keeper!',
     options: [
-      { text: 'Left corner', outcome: 'Placed firmly into the left corner — the keeper dives right! Goal! Composed penalty.', effect: { type: 'goal_chance', prob: 0.80, team: 'home' } },
-      { text: 'Right corner', outcome: 'Rifled into the right corner — keeper goes the wrong way completely. Clinical!', effect: { type: 'goal_chance', prob: 0.80, team: 'home' } },
-      { text: 'Down the middle', outcome: 'Bold choice straight down the middle — the keeper stays and it crashes off his chest! Saved! The gamble backfires.', effect: { type: 'goal_chance', prob: 0.50, team: 'home' } },
+      { text: 'Slide tackle from behind', outcome: "Crunching tackle — wins the ball cleanly! Crisis averted.", saves: true },
+      { text: 'Jockey and wait', outcome: "Striker shifts left and fires — your keeper can't get across. GOAL.", saves: false },
+      { text: 'Try to body him off the ball', outcome: "Nudges him but he stays on and slots it past the keeper. GOAL.", saves: false },
     ]
   },
   {
-    id: 'shoot_penalty_final',
-    category: 'shooting',
-    situation: 'Your striker has a crucial penalty. How does he take it?',
+    id: 'def_penalty',
+    situation: 'PENALTY against you! Your keeper must save it!',
     options: [
-      { text: 'Smash it', outcome: 'Pure power into the bottom corner — the keeper guesses right but cannot stop the force of it. GOAL!', effect: { type: 'goal_chance', prob: 0.75, team: 'home' } },
-      { text: 'Placed shot', outcome: 'Calm, precise placement into the corner — the keeper dives late and cannot reach it. Ice cold!', effect: { type: 'goal_chance', prob: 0.85, team: 'home' } },
-      { text: 'Panenka', outcome: 'Audacious Panenka chip down the middle — the keeper goes left and the ball bounces into the empty net. Genius!', effect: { type: 'goal_chance', prob: 0.50, team: 'home' } },
+      { text: 'Keeper dives left', outcome: 'Dives left — they shot right. GOAL.', saves: false },
+      { text: 'Keeper stays central', outcome: 'Stays put — they go down the middle — SAVED! Incredible!', saves: true },
+      { text: 'Keeper dives right', outcome: 'Dives right — they shot left. GOAL.', saves: false },
     ]
   },
   {
-    id: 'shoot_freekick_25',
-    category: 'shooting',
-    situation: 'You have a free kick from 25 yards. What do you do?',
+    id: 'def_cross_unmarked',
+    situation: 'Dangerous cross coming in — their striker is free!',
     options: [
-      { text: 'Knuckleball', outcome: 'Dips and dips — the keeper palms it wide for a corner. Unlucky, the movement was perfect.', effect: { type: 'goal_chance', prob: 0.55, team: 'home' } },
-      { text: 'Curled shot over the wall', outcome: 'Perfectly curled delivery over the wall — the keeper gets his fingers to it but cannot stop it. GOAL!', effect: { type: 'goal_chance', prob: 0.50, team: 'home' } },
-      { text: 'Power shot through the wall', outcome: 'Hit with ferocious power through a gap in the wall — it rockets past the keeper!', effect: { type: 'goal_chance', prob: 0.40, team: 'home' } },
+      { text: 'Defender rushes to clear early', outcome: 'Rushed clearance boots it away — lucky escape. No goal!', saves: true },
+      { text: "Track the striker's run", outcome: 'Tracks the run but loses him at the back post — headed in. GOAL.', saves: false },
+      { text: 'Hold the defensive line', outcome: 'Line holds but the cross drops to a different striker — tap-in. GOAL.', saves: false },
     ]
   },
   {
-    id: 'shoot_freekick_edge',
-    category: 'shooting',
-    situation: 'You have a dangerous free kick near the edge of the box. What do you do?',
+    id: 'def_winger_cutinside',
+    situation: 'Their winger cuts inside — shooting position!',
     options: [
-      { text: 'Lift over the wall', outcome: 'Lifted deftly over the wall — it drops under the bar and into the net. Exquisite technique!', effect: { type: 'goal_chance', prob: 0.48, team: 'home' } },
-      { text: 'Keeper side of the wall', outcome: 'Struck firmly to the keeper side — he dives and pushes it onto the post. So close!', effect: { type: 'goal_chance', prob: 0.42, team: 'home' } },
-      { text: 'Fake shot and pass short', outcome: 'Clever fake and short routine — it draws two players out and creates a dangerous cross. Good positioning.', effect: { type: 'chance', uMod: 1.2, oMod: 1.0 } },
+      { text: 'Pressure him hard', outcome: 'Forces a heavy touch — shot goes over the bar! Phew.', saves: true },
+      { text: 'Hold shape and block the angle', outcome: 'Shape is fine but he finds the gap — smashes it in. GOAL.', saves: false },
+      { text: 'Commit to the block', outcome: 'Committed too early — he steps around and scores. GOAL.', saves: false },
     ]
   },
   {
-    id: 'shoot_keeper_rush',
-    category: 'shooting',
-    situation: 'Your striker is clean through but the keeper rushes out fast. What do you do?',
+    id: 'def_header_cross',
+    situation: 'Dangerous cross — their striker attacking the header!',
     options: [
-      { text: 'Chip over the keeper', outcome: 'Cheeky chip — the keeper is committed and the ball floats over him into the net. Brilliant!', effect: { type: 'goal_chance', prob: 0.68, team: 'home' } },
-      { text: 'Low shot across him', outcome: 'Gets a low shot away as the keeper dives — it just sneaks under his body. Goal!', effect: { type: 'goal_chance', prob: 0.60, team: 'home' } },
-      { text: 'Try to round him', outcome: 'Tries to go round the keeper — but the keeper is brave, dives at his feet and smothers it. Excellent save!', effect: { type: 'save' } },
+      { text: 'Keeper punches clear', outcome: 'Strong punch — keeper clears his lines! SAVED.', saves: true },
+      { text: 'Defender tries to clear', outcome: 'Defender mistimes it — striker nods it into the net. GOAL.', saves: false },
+      { text: 'Goalkeeper tries to catch', outcome: 'Fumbles the catch — striker bundles it in. GOAL.', saves: false },
     ]
   },
   {
-    id: 'shoot_tight_angle',
-    category: 'shooting',
-    situation: 'Your winger shoots from a very tight angle. What do you do?',
+    id: 'def_freekick',
+    situation: 'Free kick in a dangerous position — 20 yards out!',
     options: [
-      { text: 'Near post drive', outcome: 'Hits it near post with precision — the keeper is wrong-footed and it slips in at the near post!', effect: { type: 'goal_chance', prob: 0.40, team: 'home' } },
-      { text: 'Far post curl', outcome: 'Curls it far post — the keeper tips it wide! Excellent save from the keeper.', effect: { type: 'goal_chance', prob: 0.52, team: 'home' } },
-      { text: 'Cut back across goal', outcome: 'Cuts it back across the six yard box — a defender throws himself in the way. Blocked!', effect: { type: 'miss' } },
-    ]
-  },
-  {
-    id: 'shoot_mid_volley',
-    category: 'shooting',
-    situation: 'The ball drops to your midfielder outside the box. What do you do?',
-    options: [
-      { text: 'Volley first time', outcome: 'A ferocious first-time volley — the ball screams into the top corner! The keeper had no chance!', effect: { type: 'goal_chance', prob: 0.50, team: 'home' } },
-      { text: 'Take a touch and shoot', outcome: 'Controls and fires from 20 yards — a good hit but straight at the keeper. Could have been better.', effect: { type: 'goal_chance', prob: 0.38, team: 'home' } },
-      { text: 'Pass wide to a runner', outcome: 'Smart pass wide keeps the attack going — your winger clips a cross into a dangerous area.', effect: { type: 'chance', uMod: 1.15, oMod: 1.0 } },
-    ]
-  },
-  {
-    id: 'shoot_under_pressure',
-    category: 'shooting',
-    situation: 'Your striker gets the ball under heavy pressure in the box. What do you do?',
-    options: [
-      { text: 'Quick toe poke', outcome: 'A quick, instinctive toe poke squeezes under the keeper. Ugly but it counts. GOAL!', effect: { type: 'goal_chance', prob: 0.55, team: 'home' } },
-      { text: 'Hold off defender and shoot', outcome: 'Strong hold and a powerful shot — it crashes off the bar! So unlucky.', effect: { type: 'chance', uMod: 1.2, oMod: 1.0 } },
-      { text: 'Fake shot and spin', outcome: 'Fake shot buys space to turn — but a second defender arrives and blocks the shot.', effect: { type: 'miss' } },
-    ]
-  },
-  {
-    id: 'shoot_weak_foot',
-    category: 'shooting',
-    situation: 'Your player has a shooting chance but is on his weaker foot. What do you do?',
-    options: [
-      { text: 'Shoot on weak foot', outcome: 'Takes it on the weaker foot — it skews wide. The connection was never great. Disappointing.', effect: { type: 'goal_chance', prob: 0.35, team: 'home' } },
-      { text: 'Cut onto strong foot', outcome: 'Takes a touch to cut onto his stronger foot — the defender slides in but the shot is away and it finds the net!', effect: { type: 'goal_chance', prob: 0.55, team: 'home' } },
-      { text: 'Lay it off to a teammate', outcome: 'Sensible lay-off to a better-positioned teammate — they get a clean shot away. Good build-up.', effect: { type: 'chance', uMod: 1.2, oMod: 1.0 } },
-    ]
-  },
-  {
-    id: 'shoot_header',
-    category: 'shooting',
-    situation: 'Your striker gets a great header chance. Where do you aim?',
-    options: [
-      { text: 'Far corner', outcome: 'Guided it with power to the far corner — the keeper dives but cannot get there. GOAL! Brilliant header!', effect: { type: 'goal_chance', prob: 0.60, team: 'home' } },
-      { text: 'Near post flick', outcome: 'Tries a near-post flick but it flies over the bar. The connection was off.', effect: { type: 'miss' } },
-      { text: 'Down into the ground', outcome: 'Directs it down into the turf — the ball bounces up sharply and the keeper drops it! GOAL!', effect: { type: 'goal_chance', prob: 0.55, team: 'home' } },
-    ]
-  },
-
-  // ── DEFENSIVE (10) ──
-  {
-    id: 'def_winger_running',
-    category: 'defensive',
-    situation: 'Their winger is running at your fullback at pace. What do you do?',
-    options: [
-      { text: 'Stay on your feet and jockey', outcome: 'Patient jockeying — the winger has no way through and the ball goes back. Excellent defending.', effect: { type: 'save' } },
-      { text: 'Slide tackle', outcome: 'The slide tackle is mistimed — the winger skips over it! He cuts inside and forces a fingertip save. Dangerous moment.', effect: { type: 'goal_chance', prob: 0.45, team: 'away' } },
-      { text: 'Force him out wide', outcome: 'Cleverly forces the winger out wide toward the byline — the cross is overhit and your keeper claims it.', effect: { type: 'save' } },
-    ]
-  },
-  {
-    id: 'def_striker_through',
-    category: 'defensive',
-    situation: 'Their striker is clean through on goal. What do you do?',
-    options: [
-      { text: 'Keeper rushes out', outcome: 'Keeper rushes out bravely and blocks at the striker\'s feet! Incredible save — ball cleared.', effect: { type: 'save' } },
-      { text: 'Keeper stays on line', outcome: 'Keeper stays and the striker tries to place it — but keeper gets a strong hand on it. Superb!', effect: { type: 'goal_chance', prob: 0.45, team: 'away' } },
-      { text: 'Last defender brings him down', outcome: 'Last defender makes a cynical foul — red card and penalty! The opposition score from the spot.', effect: { type: 'goal', team: 'away' } },
-    ]
-  },
-  {
-    id: 'def_cut_inside',
-    category: 'defensive',
-    situation: 'Their winger cuts inside onto his stronger foot. What do you do?',
-    options: [
-      { text: 'Block the shot', outcome: 'Brave block — throws himself in the way of the shot. Ball deflects over. Great defending!', effect: { type: 'save' } },
-      { text: 'Lunge in with a tackle', outcome: 'Dives in — but gets the ball! No, wait — late and the ref awards a free kick in a dangerous area.', effect: { type: 'goal_chance', prob: 0.40, team: 'away' } },
-      { text: 'Track the run and delay', outcome: 'Tracks back and shepherds the ball out of danger — crosses are dealt with. No damage done.', effect: { type: 'save' } },
-    ]
-  },
-  {
-    id: 'def_striker_box',
-    category: 'defensive',
-    situation: 'Their striker receives the ball in the box, back to goal. What do you do?',
-    options: [
-      { text: 'Stand him up, no foul', outcome: 'Disciplined defending — stands firm without fouling. The striker cannot turn and lays it back. Crisis averted!', effect: { type: 'save' } },
-      { text: 'Slide tackle from behind', outcome: 'Slide tackle clips the striker — penalty! The opposition step up and score. Costly decision.', effect: { type: 'goal', team: 'away' } },
-      { text: 'Double team with a cover defender', outcome: 'Both defenders close in — the striker has nowhere to go and the ball is won cleanly.', effect: { type: 'save' } },
-    ]
-  },
-  {
-    id: 'def_long_shot',
-    category: 'defensive',
-    situation: 'Their midfielder lines up a long-range shot. What do you do?',
-    options: [
-      { text: 'Close him down fast', outcome: 'Your player charges out and blocks the shot — the ball loops away to safety. Great pressure!', effect: { type: 'save' } },
-      { text: 'Block the passing lane instead', outcome: 'Blocks the pass — but the midfielder shoots anyway. Keeper tips it over. Good instinct.', effect: { type: 'goal_chance', prob: 0.38, team: 'away' } },
-      { text: 'Hold defensive shape', outcome: 'The long shot thunders toward goal — your keeper palms it wide with a strong save!', effect: { type: 'goal_chance', prob: 0.42, team: 'away' } },
+      { text: 'Pack the wall tight', outcome: 'Wall holds firm — shot hits the wall and deflects wide. Safe!', saves: true },
+      { text: 'Rush the kick', outcome: 'Rushed it — striker chips it over the charging wall. GOAL.', saves: false },
+      { text: 'Set a small wall, cover the corners', outcome: 'Small wall leaves a gap — drilled straight through. GOAL.', saves: false },
     ]
   },
   {
     id: 'def_counter',
-    category: 'defensive',
-    situation: 'They launch a dangerous counter attack with numbers. What do you do?',
+    situation: 'Counter attack — their striker is breaking through!',
     options: [
-      { text: 'Tactical foul to stop it', outcome: 'Smart tactical foul breaks the counter — yellow card but the danger is stopped. Job done.', effect: { type: 'save' } },
-      { text: 'Drop back and defend deep', outcome: 'Everyone drops back — they still have a chance but your compact shape keeps them out.', effect: { type: 'goal_chance', prob: 0.38, team: 'away' } },
-      { text: 'Press the ball carrier', outcome: 'Your midfielder presses — the ball carrier stumbles and you win it back! Instant counter for you!', effect: { type: 'chance', uMod: 1.25, oMod: 0.85 } },
+      { text: 'Last man sprint to cover', outcome: 'Last man gets back — brilliant covering tackle! No goal.', saves: true },
+      { text: 'Pull back and regroup', outcome: 'Pulled back but striker had too much pace — scores. GOAL.', saves: false },
+      { text: 'Tactical foul to stop the break', outcome: 'Yellow card shown — but the ref allows play on. GOAL anyway.', saves: false },
     ]
   },
   {
-    id: 'def_cross_about_to_happen',
-    category: 'defensive',
-    situation: 'Their winger has time on the ball and is about to cross. What do you do?',
+    id: 'def_corner_bigman',
+    situation: 'Corner — their big striker is attacking the near post!',
     options: [
-      { text: 'Block the cross immediately', outcome: 'Your fullback sprints across and blocks the cross — ball goes for a throw. Solid defending.', effect: { type: 'save' } },
-      { text: 'Let him cross and mark the striker', outcome: 'The cross comes in — your centre back wins the header comfortably. Organised at the back.', effect: { type: 'goal_chance', prob: 0.35, team: 'away' } },
-      { text: 'Slide tackle', outcome: 'Mistimed slide — the winger rides the challenge and whips in a dangerous ball. Your keeper scrambles!', effect: { type: 'goal_chance', prob: 0.50, team: 'away' } },
+      { text: 'Man-mark him tightly', outcome: "Tight man-marking — he can't get a free run. Headed wide!", saves: true },
+      { text: 'Zone defence at the post', outcome: 'Zone defence leaves a gap — he attacks it and scores. GOAL.', saves: false },
+      { text: 'Attack the ball yourself', outcome: 'Defender goes for it but gets outjumped — heads it in. GOAL.', saves: false },
     ]
   },
   {
-    id: 'def_run_behind',
-    category: 'defensive',
-    situation: 'Their striker makes a sharp run in behind your defence. What do you do?',
+    id: 'def_longshot',
+    situation: 'Their midfielder shapes to shoot from distance!',
     options: [
-      { text: 'Step up for offside', outcome: 'Your defensive line steps up in perfect unison — the flag goes up! Offside by a mile!', effect: { type: 'save' } },
-      { text: 'Track the run all the way', outcome: 'Your defender tracks the run and gets goal-side just in time. No shot on target.', effect: { type: 'save' } },
-      { text: 'Tell keeper to sweep', outcome: 'Keeper rushes out to sweep — but the ball goes over him and the attacker slots into an empty net!', effect: { type: 'goal', team: 'away' } },
+      { text: 'Close him down fast', outcome: 'Closed down brilliantly — shot scooped high over the bar!', saves: true },
+      { text: 'Drop into a defensive block', outcome: 'Block set up but he finds the gap — thunderbolt in. GOAL.', saves: false },
+      { text: 'Let him shoot — keeper is set', outcome: 'Keeper guesses wrong corner — screamer goes in. GOAL.', saves: false },
     ]
   },
   {
-    id: 'def_cam_space',
-    category: 'defensive',
-    situation: 'Their CAM finds space between your defensive and midfield lines. What do you do?',
+    id: 'def_rebound_danger',
+    situation: 'Keeper makes a save but the rebound falls to their striker!',
     options: [
-      { text: 'Press him immediately', outcome: 'Hard press wins the ball back in the middle third. Your team launches a counter. Brilliant!', effect: { type: 'chance', uMod: 1.2, oMod: 0.85 } },
-      { text: 'Sit deeper and close the gap', outcome: 'You drop off and compress the space — their CAM has nowhere to play and the danger fades.', effect: { type: 'save' } },
-      { text: 'Man-mark the striker to deny the pass', outcome: 'Tight on the striker but the CAM plays over the top — unmarked runner goes close.', effect: { type: 'goal_chance', prob: 0.42, team: 'away' } },
+      { text: 'Defender dives to smother', outcome: 'Brave dive — smothers the rebound! Incredible defending.', saves: true },
+      { text: 'Keeper scrambles to recover', outcome: "Keeper not quick enough — striker taps in the rebound. GOAL.", saves: false },
+      { text: 'Hope it goes wide', outcome: "It doesn't go wide. GOAL.", saves: false },
     ]
   },
   {
-    id: 'def_overlap',
-    category: 'defensive',
-    situation: 'Their fullback overlaps and your winger is out of position. What do you do?',
+    id: 'def_through_ball',
+    situation: 'Through ball splits your defence — striker in on goal!',
     options: [
-      { text: 'Your midfielder tracks the runner', outcome: 'Midfielder drops and covers the overlap — the cross never comes in. Disciplined cover.', effect: { type: 'save' } },
-      { text: 'Press the winger with the ball', outcome: 'Pressure on the winger — he misses the overlap and plays it back. Momentum killed.', effect: { type: 'save' } },
-      { text: 'Hold your defensive position', outcome: 'Left the overlapping fullback free — he receives and chips a dangerous ball into the box. Keeper punches.', effect: { type: 'goal_chance', prob: 0.45, team: 'away' } },
-    ]
-  },
-
-  // ── GOALKEEPER (10) ──
-  {
-    id: 'gk_penalty_opp',
-    category: 'goalkeeper',
-    situation: 'The opposition have a penalty. Which way does your keeper dive?',
-    options: [
-      { text: 'Dive left', outcome: 'Keeper dives left — and the penalty goes left! Incredible save! The crowd erupts!', effect: { type: 'gk_penalty', keeperDir: 'left' } },
-      { text: 'Dive right', outcome: 'Keeper dives right — and the penalty goes right! Fingers to it — pushed wide! What a save!', effect: { type: 'gk_penalty', keeperDir: 'right' } },
-      { text: 'Stay in the middle', outcome: 'Keeper stands tall in the middle — a bold choice. The penalty is struck to a corner and the keeper cannot reach it.', effect: { type: 'gk_penalty', keeperDir: 'middle' } },
+      { text: 'Defender chases and lunges', outcome: 'Desperate lunge — gets a toe on it! Deflects wide for a corner.', saves: true },
+      { text: 'Keeper rushes out to claim', outcome: 'Keeper rushes but gets there a fraction late — lobbed into the net. GOAL.', saves: false },
+      { text: 'Hold defensive shape', outcome: 'Held shape but the striker still had enough space to finish. GOAL.', saves: false },
     ]
   },
   {
-    id: 'gk_1v1',
-    category: 'goalkeeper',
-    situation: 'A striker is 1v1 with your keeper. What does the keeper do?',
+    id: 'def_setpiece_header',
+    situation: 'Set piece delivery — their striker is completely free!',
     options: [
-      { text: 'Rush out and close the angle', outcome: 'Brave rush out — the keeper makes himself huge and the striker can only find his legs. SAVED!', effect: { type: 'goal_chance', prob: 0.50, team: 'away' } },
-      { text: 'Stand tall and wait', outcome: 'The keeper stands his ground — reads the striker\'s eyes and dives the right way to save it!', effect: { type: 'goal_chance', prob: 0.48, team: 'away' } },
-      { text: 'Dive early to put him off', outcome: 'Keeper dives early — the striker simply slots it into the empty net. Poor decision.', effect: { type: 'goal', team: 'away' } },
-    ]
-  },
-  {
-    id: 'gk_cross',
-    category: 'goalkeeper',
-    situation: 'A dangerous cross is whipped into your box. What does your keeper do?',
-    options: [
-      { text: 'Come and claim it', outcome: 'Keeper climbs highest and claims it cleanly above the striker. Commanding performance!', effect: { type: 'goal_chance', prob: 0.32, team: 'away' } },
-      { text: 'Punch it clear', outcome: 'Strong punch with both fists — the ball is safely cleared to the edge of the box and your defender collects.', effect: { type: 'save' } },
-      { text: 'Stay on the line and trust the defence', outcome: 'Stays rooted — the defender wins the header but only clears as far as the edge of the box.', effect: { type: 'goal_chance', prob: 0.45, team: 'away' } },
-    ]
-  },
-  {
-    id: 'gk_long_shot',
-    category: 'goalkeeper',
-    situation: 'A powerful long shot is flying toward your goal. What does your keeper do?',
-    options: [
-      { text: 'Catch it', outcome: 'Tries to catch it but spills it — the striker follows in! Your defender clears off the line!', effect: { type: 'goal_chance', prob: 0.40, team: 'away' } },
-      { text: 'Parry wide', outcome: 'Strong parry wide — the ball goes safely for a corner. Clean and decisive.', effect: { type: 'save' } },
-      { text: 'Tip it over the bar', outcome: 'Brilliant one-handed tip over the bar at full stretch! Breathtaking save. Corner to the opposition.', effect: { type: 'save' } },
-    ]
-  },
-  {
-    id: 'gk_loose_ball',
-    category: 'goalkeeper',
-    situation: 'The ball is loose in your six-yard box with a striker closing in. What does the keeper do?',
-    options: [
-      { text: 'Dive on the ball', outcome: 'Brave dive — takes a knock but holds onto the ball! The referee awards a goal kick.', effect: { type: 'save' } },
-      { text: 'Clear with feet', outcome: 'Gets boot to it — but the clearance falls to an opponent outside the box. Another attack coming.', effect: { type: 'goal_chance', prob: 0.42, team: 'away' } },
-      { text: 'Wait and pick the right moment', outcome: 'Hesitates — the striker is onto it and pokes it toward goal but it cannons off the post. Lucky escape!', effect: { type: 'goal_chance', prob: 0.50, team: 'away' } },
-    ]
-  },
-  {
-    id: 'gk_distribution',
-    category: 'goalkeeper',
-    situation: 'Your keeper has the ball under intense pressure. What do they do?',
-    options: [
-      { text: 'Go long and direct', outcome: 'Long kick upfield finds your striker in space — he holds it up well and your team builds.', effect: { type: 'chance', uMod: 1.15, oMod: 1.0 } },
-      { text: 'Short pass to the defender', outcome: 'Calm short pass out to the defender — your team builds carefully from the back. Good control.', effect: { type: 'xg', uMod: 1.05, oMod: 0.90 } },
-      { text: 'Clear it into Row Z', outcome: 'Massive clearance — the ball goes anywhere. Opposition throw-in high up the pitch. Wasteful.', effect: { type: 'xg', uMod: 0.90, oMod: 1.10 } },
-    ]
-  },
-  {
-    id: 'gk_round',
-    category: 'goalkeeper',
-    situation: 'Their striker tries to dribble around your keeper. What does the keeper do?',
-    options: [
-      { text: 'Stay upright and jockey', outcome: 'Patient keeping — waits and cuts off the angle. The striker cannot find a way through. Ball recovered!', effect: { type: 'save' } },
-      { text: 'Dive at his feet', outcome: 'Brave dive smothers the ball! The striker cannot believe it. What courage from the keeper!', effect: { type: 'goal_chance', prob: 0.42, team: 'away' } },
-      { text: 'Force him wide of the goal', outcome: 'Angles well to force the striker away from goal — the shot from the byline goes wide. Smart goalkeeping.', effect: { type: 'save' } },
-    ]
-  },
-  {
-    id: 'gk_header_save',
-    category: 'goalkeeper',
-    situation: 'A header from close range is directed toward the corner. What does your keeper do?',
-    options: [
-      { text: 'Full stretch save', outcome: 'Incredible full-stretch save — tips it round the post with his fingertips! Moment of the match!', effect: { type: 'save' } },
-      { text: 'Punch it away', outcome: 'Keeper punches it away clumsily — it falls to an opponent but they drive it over the bar. Relief!', effect: { type: 'goal_chance', prob: 0.35, team: 'away' } },
-      { text: 'Trust a defender on the line', outcome: 'Rooted to his line — the header beats him but the defender on the line clears! Incredible last-ditch defending.', effect: { type: 'save' } },
-    ]
-  },
-  {
-    id: 'gk_freekick_facing',
-    category: 'goalkeeper',
-    situation: 'Your keeper is setting his wall for a dangerous free kick. What do you do?',
-    options: [
-      { text: 'Cover the near post with the wall', outcome: 'Wall covers the near post — the free kick curls to the far post and the keeper parries it wide!', effect: { type: 'save' } },
-      { text: 'Trust the wall and cover the far post', outcome: 'The free kick bends over the wall — keeper guesses right and gets both hands to it. Saved!', effect: { type: 'goal_chance', prob: 0.45, team: 'away' } },
-      { text: 'Move early to the ball side', outcome: 'Keeper cheats slightly — the free kick goes the other way but the wall diverts it over.', effect: { type: 'goal_chance', prob: 0.40, team: 'away' } },
-    ]
-  },
-  {
-    id: 'gk_late_catch',
-    category: 'goalkeeper',
-    situation: 'Your keeper catches the ball with the game on the line. What do you do?',
-    options: [
-      { text: 'Slow it down — waste time', outcome: 'Keeper kills time brilliantly — the opposition grow frustrated and commit men forward. Great game management.', effect: { type: 'xg', uMod: 1.0, oMod: 0.80 } },
-      { text: 'Launch a quick counter', outcome: 'Quick long throw launches a counter — your striker is in behind but curls it wide. So close!', effect: { type: 'chance', uMod: 1.3, oMod: 1.0 } },
-      { text: 'Roll to the nearest defender', outcome: 'Calm roll to the defender who plays it out. Good possession — team builds with confidence.', effect: { type: 'xg', uMod: 1.05, oMod: 0.90 } },
-    ]
-  },
-
-  // ── SET PIECES (10) ──
-  {
-    id: 'sp_corner_standard',
-    category: 'setpiece',
-    situation: 'You win a corner. What type of delivery do you choose?',
-    options: [
-      { text: 'Inswinger to near post', outcome: 'Whipped inswinger — your striker attacks the near post and glances it into the net! GOAL!', effect: { type: 'goal_chance', prob: 0.40, team: 'home' } },
-      { text: 'Outswinger to far post', outcome: 'Floated to the far post — your centre back rises above everyone and nods it down goalward. Keeper tips it out!', effect: { type: 'goal_chance', prob: 0.32, team: 'home' } },
-      { text: 'Short corner routine', outcome: 'Short corner draws defenders out — a low cross is fired in but blocked before it reaches anyone.', effect: { type: 'chance', uMod: 1.1, oMod: 1.0 } },
-    ]
-  },
-  {
-    id: 'sp_corner_last_min',
-    category: 'setpiece',
-    situation: 'You have a corner in the last minute. All or nothing. What do you do?',
-    options: [
-      { text: 'Crowd the keeper', outcome: 'Three players go for the keeper — your centre back gets a free header at the near post! GOAL! What drama!', effect: { type: 'goal_chance', prob: 0.45, team: 'home' } },
-      { text: 'Short corner to create space', outcome: 'Short corner pulls defenders out — a floated cross to the back post. Your player heads it wide. Just wide!', effect: { type: 'goal_chance', prob: 0.30, team: 'home' } },
-      { text: 'Target your best header', outcome: 'Your tallest player makes the run — the ball finds him but his header is straight at the keeper. So close!', effect: { type: 'goal_chance', prob: 0.38, team: 'home' } },
-    ]
-  },
-  {
-    id: 'sp_defend_corner',
-    category: 'setpiece',
-    situation: 'The opposition have a dangerous corner. How do you defend it?',
-    options: [
-      { text: 'Man marking all threats', outcome: 'Tight man marking — your defenders don\'t give an inch and head it away comfortably. Solid.', effect: { type: 'save' } },
-      { text: 'Zonal marking', outcome: 'Zonal setup — you defend your zones but one player drifts between and heads it goalward. Keeper saves!', effect: { type: 'goal_chance', prob: 0.38, team: 'away' } },
-      { text: 'Leave a striker forward for a counter', outcome: 'Keeping a striker up — the corner is cleared long and he wins the ball! Dangerous counter.', effect: { type: 'chance', uMod: 1.25, oMod: 0.90 } },
-    ]
-  },
-  {
-    id: 'sp_freekick_wide',
-    category: 'setpiece',
-    situation: 'You have a free kick wide right, 30 yards from goal. What do you do?',
-    options: [
-      { text: 'Cross into the box', outcome: 'Swinging delivery into the box — your striker peels away and volleys it goalward! GOAL!', effect: { type: 'goal_chance', prob: 0.35, team: 'home' } },
-      { text: 'Shoot near post', outcome: 'Surprised everyone with a shot — dips toward the near post but the keeper gets down well.', effect: { type: 'goal_chance', prob: 0.22, team: 'home' } },
-      { text: 'Play it short for a better angle', outcome: 'Short ball creates a better crossing angle — but the defence has reorganised and clears the cross.', effect: { type: 'chance', uMod: 1.08, oMod: 1.0 } },
-    ]
-  },
-  {
-    id: 'sp_long_throw',
-    category: 'setpiece',
-    situation: 'You have a throw-in deep in their half near their box. What do you do?',
-    options: [
-      { text: 'Long throw into the box', outcome: 'Massive long throw causes chaos — the ball bounces around the box and your striker prods it in!', effect: { type: 'goal_chance', prob: 0.28, team: 'home' } },
-      { text: 'Short and build up', outcome: 'Short throw and your team patiently builds — eventually works a crossing position. Good play.', effect: { type: 'chance', uMod: 1.12, oMod: 1.0 } },
-      { text: 'Throw backwards to keep possession', outcome: 'Played backwards to reset — your team circulates and waits for the right moment. Patient buildup.', effect: { type: 'xg', uMod: 1.0, oMod: 0.88 } },
-    ]
-  },
-  {
-    id: 'sp_defend_freekick',
-    category: 'setpiece',
-    situation: 'They have a dangerous free kick 22 yards from your goal. What do you do?',
-    options: [
-      { text: 'Big wall — cover the near post', outcome: 'Five-man wall — the free kick bends around it to the far post. Keeper dives and tips it over. Incredible!', effect: { type: 'goal_chance', prob: 0.42, team: 'away' } },
-      { text: 'Mark all the runners', outcome: 'Tight marking on all their runners — the free kick is aimed at the wall and blocked. Crisis averted.', effect: { type: 'save' } },
-      { text: 'Keep a player on the post', outcome: 'Player on each post — the free kick hits the wall but falls dangerously. Your keeper smothers it!', effect: { type: 'save' } },
-    ]
-  },
-  {
-    id: 'sp_corner_tall_opponents',
-    category: 'setpiece',
-    situation: 'You have a corner but your opponents have a huge aerial advantage. What do you do?',
-    options: [
-      { text: 'Short corner to play around them', outcome: 'Short corner bypasses their aerial strength — a low driven ball finds your midfielder for a shot! GOAL!', effect: { type: 'goal_chance', prob: 0.38, team: 'home' } },
-      { text: 'Low driven cross', outcome: 'Low drilled corner — it goes all the way through to the back post and your winger prods it in!', effect: { type: 'goal_chance', prob: 0.30, team: 'home' } },
-      { text: 'Far post ball hoping for a mistake', outcome: 'Floated ball to the far post — their centre back dominates and heads it away strongly.', effect: { type: 'miss' } },
-    ]
-  },
-  {
-    id: 'sp_corner_cb_up',
-    category: 'setpiece',
-    situation: 'Your centre back is up for the corner — a real aerial threat. What do you do?',
-    options: [
-      { text: 'Aim the corner at him', outcome: 'Floated directly to your centre back — he rises and powers a header into the net! GOAL!', effect: { type: 'goal_chance', prob: 0.48, team: 'home' } },
-      { text: 'Use him as a decoy', outcome: 'He makes the run as a decoy — your attacker at the back post gets a free header. Just over!', effect: { type: 'chance', uMod: 1.18, oMod: 1.0 } },
-      { text: 'Short corner while he occupies defenders', outcome: 'Short corner played while he draws two defenders — a low cross is fired in. Blocked but good pressure.', effect: { type: 'chance', uMod: 1.1, oMod: 1.0 } },
-    ]
-  },
-  {
-    id: 'sp_freekick_long',
-    category: 'setpiece',
-    situation: 'You have a free kick from 35 yards. What do you do?',
-    options: [
-      { text: 'Shoot — nothing to lose', outcome: 'Hit with pace and swerve from long range — the keeper is scrambling and it clips the bar! So close!', effect: { type: 'goal_chance', prob: 0.30, team: 'home' } },
-      { text: 'Float a cross into the box', outcome: 'Floated cross into a dangerous area — your striker outjumps the defender but heads just over.', effect: { type: 'chance', uMod: 1.12, oMod: 1.0 } },
-      { text: 'Pass sideways to build', outcome: 'Played sideways to keep possession — your team builds patiently from a wider position.', effect: { type: 'xg', uMod: 1.05, oMod: 0.92 } },
-    ]
-  },
-  {
-    id: 'sp_defend_corner_winning',
-    category: 'setpiece',
-    situation: 'They have a corner and you are winning. How do you defend it?',
-    options: [
-      { text: 'Everyone back — defend deep', outcome: 'Packed defence deals with the corner comfortably. The ball is cleared upfield and the game slows.', effect: { type: 'save' } },
-      { text: 'Leave your striker up for a counter', outcome: 'Corner is cleared long — your striker runs onto it but the angle is tight and his shot misses.', effect: { type: 'goal_chance', prob: 0.35, team: 'away' } },
-      { text: 'Man mark the keeper too', outcome: 'Marking the keeper disrupts them completely — the corner is wasted. Clever tactic.', effect: { type: 'save' } },
-    ]
-  },
-
-  // ── MIDFIELD (8) ──
-  {
-    id: 'mid_press_trigger',
-    category: 'midfield',
-    situation: 'The opposition midfielder receives a pass under pressure. Do you press?',
-    options: [
-      { text: 'Immediate press — win it back', outcome: 'Lightning press wins the ball — your team is instantly in a dangerous counter position!', effect: { type: 'chance', uMod: 1.30, oMod: 0.85 } },
-      { text: 'Drop off and set the trap', outcome: 'Organised mid-block — the opponent has to play backwards. Your shape holds perfectly.', effect: { type: 'xg', uMod: 1.0, oMod: 0.82 } },
-      { text: 'Hold and watch', outcome: 'You hold shape — they find a pass through your midfield and create a dangerous position.', effect: { type: 'xg', uMod: 0.95, oMod: 1.15 } },
-    ]
-  },
-  {
-    id: 'mid_overload',
-    category: 'midfield',
-    situation: 'You have a 3v2 overload in midfield. What do you do?',
-    options: [
-      { text: 'Play quickly and exploit it', outcome: 'Quick combination play exploits the overload — you slice through and create a gilt-edged chance!', effect: { type: 'chance', uMod: 1.35, oMod: 1.0 } },
-      { text: 'Slow it down and build', outcome: 'Patient build-up from the overload position — you retain the ball well and keep attacking shape.', effect: { type: 'xg', uMod: 1.15, oMod: 0.90 } },
-      { text: 'Hit it long over the top', outcome: 'Goes direct over the top — the defender heads it clear. Wasted the overload.', effect: { type: 'xg', uMod: 0.88, oMod: 1.0 } },
-    ]
-  },
-  {
-    id: 'mid_ball_retention',
-    category: 'midfield',
-    situation: 'You are dominating possession in midfield. How do you use it?',
-    options: [
-      { text: 'Probe and wait for the perfect moment', outcome: 'Magnificent patience — the opposition defence finally opens and you exploit the space brilliantly.', effect: { type: 'chance', uMod: 1.25, oMod: 0.88 } },
-      { text: 'Speed up and go direct', outcome: 'Change of pace catches the defence off guard — you create three chances in quick succession!', effect: { type: 'chance', uMod: 1.20, oMod: 1.0 } },
-      { text: 'Maintain possession and tire them', outcome: 'Your team keeps the ball brilliantly — the opponents are running but cannot get near it.', effect: { type: 'xg', uMod: 1.05, oMod: 0.85 } },
-    ]
-  },
-  {
-    id: 'mid_transition',
-    category: 'midfield',
-    situation: 'Your team wins the ball high up in midfield. What do you do?',
-    options: [
-      { text: 'Counter immediately before they recover', outcome: 'Lightning counter — three passes and your striker is through on goal! He slots it home!', effect: { type: 'goal', team: 'home' } },
-      { text: 'Hold and build deliberately', outcome: 'Controlled build-up — they recover their shape but you still create a good crossing opportunity.', effect: { type: 'chance', uMod: 1.1, oMod: 1.0 } },
-      { text: 'Play sideways to keep possession', outcome: 'Sideways ball maintains possession but slows your momentum. The moment has passed.', effect: { type: 'xg', uMod: 1.0, oMod: 0.90 } },
-    ]
-  },
-  {
-    id: 'mid_defensive_shape',
-    category: 'midfield',
-    situation: 'The opposition are building up slowly. How does your midfield set up?',
-    options: [
-      { text: 'High press from the midfield', outcome: 'Aggressive press — your midfielders harry them into a mistake and you win it back high!', effect: { type: 'chance', uMod: 1.22, oMod: 0.90 } },
-      { text: 'Compact mid-block', outcome: 'Tight and organised mid-block — no way through. They go wide but your fullbacks deal with it comfortably.', effect: { type: 'xg', uMod: 1.0, oMod: 0.78 } },
-      { text: 'Drop deep and hold', outcome: 'You concede too much territory — they put pressure on and force several uncomfortable situations.', effect: { type: 'xg', uMod: 0.88, oMod: 1.12 } },
-    ]
-  },
-  {
-    id: 'mid_set_piece_restart',
-    category: 'midfield',
-    situation: 'Your team has a quick throw-in from midfield. What is the call?',
-    options: [
-      { text: 'Play it quick and catch them out', outcome: 'Quick throw while they are not set — a rapid exchange and your team gets into a dangerous attack!', effect: { type: 'chance', uMod: 1.28, oMod: 1.0 } },
-      { text: 'Wait for players to get forward', outcome: 'Delay the throw to get bodies forward — a better-structured attack develops from it.', effect: { type: 'chance', uMod: 1.1, oMod: 1.0 } },
-      { text: 'Go backwards and reset', outcome: 'Played back to the defence to reset — they organise and build from the back. Steady.', effect: { type: 'xg', uMod: 0.95, oMod: 0.92 } },
-    ]
-  },
-  {
-    id: 'mid_second_balls',
-    category: 'midfield',
-    situation: 'There is a physical midfield battle for second balls. What is your approach?',
-    options: [
-      { text: 'Win every duel — be aggressive', outcome: 'Your midfielders dominate every aerial challenge — the second balls consistently fall to your team!', effect: { type: 'chance', uMod: 1.25, oMod: 0.88 } },
-      { text: 'Let them win it but have more runners', outcome: 'Smart positioning — you lose some duels but your runners are in better positions. You create chances.', effect: { type: 'chance', uMod: 1.15, oMod: 1.0 } },
-      { text: 'Drop off the second ball zone', outcome: 'You concede the second ball space — they win several in a row and put sustained pressure on.', effect: { type: 'xg', uMod: 0.90, oMod: 1.15 } },
-    ]
-  },
-  {
-    id: 'mid_pressing_trap',
-    category: 'midfield',
-    situation: 'Their goalkeeper has the ball and your press can trap them. What is the trigger?',
-    options: [
-      { text: 'Send two strikers to press immediately', outcome: 'Double press forces a long kick — your centre back wins the aerial battle and you launch an attack!', effect: { type: 'chance', uMod: 1.22, oMod: 0.88 } },
-      { text: 'One striker presses, midfield holds', outcome: 'Controlled press — they find a pass to the fullback but your midfield closes quickly and wins it!', effect: { type: 'chance', uMod: 1.12, oMod: 0.90 } },
-      { text: 'Hold the press and let them play out', outcome: 'You let them play out — they find good positions and probe your defensive shape for openings.', effect: { type: 'xg', uMod: 0.92, oMod: 1.08 } },
-    ]
-  },
-
-  // ── LATE GAME (8) ──
-  {
-    id: 'late_holding_lead',
-    category: 'lategame',
-    situation: 'You are ahead with 15 minutes to go. How do you manage it?',
-    options: [
-      { text: 'Park the bus — deep block', outcome: 'Compact and organised — they create nothing meaningful. The whistle blows. Clean sheet preserved!', effect: { type: 'xg', uMod: 0.70, oMod: 0.55 } },
-      { text: 'Keep playing your normal game', outcome: 'You maintain your structure and style — the game stays controlled and you see it out comfortably.', effect: { type: 'xg', uMod: 1.0, oMod: 0.88 } },
-      { text: 'Press high for a second goal', outcome: 'Aggressive high press — you win the ball and score a second goal to kill the game!', effect: { type: 'goal_chance', prob: 0.45, team: 'home' } },
-    ]
-  },
-  {
-    id: 'late_chasing_game',
-    category: 'lategame',
-    situation: 'You are behind with 10 minutes left. What do you do?',
-    options: [
-      { text: 'All-out attack — everyone forward', outcome: 'Everyone piles forward — pure chaos! Your striker nods in a corner in the 89th minute! Back in it!', effect: { type: 'goal', team: 'home' } },
-      { text: 'Controlled pushing — stay organised', outcome: 'Calm pushing for the goal — you carve out a good chance but the keeper makes a crucial save.', effect: { type: 'goal_chance', prob: 0.45, team: 'home' } },
-      { text: 'Bring on fresh attackers', outcome: 'Fresh legs make a difference — the sub creates a chance that goes agonisingly close. Almost!', effect: { type: 'goal_chance', prob: 0.40, team: 'home' } },
-    ]
-  },
-  {
-    id: 'late_level',
-    category: 'lategame',
-    situation: 'The game is level with 10 minutes to go. Who do you play for?',
-    options: [
-      { text: 'Go for the win — push forward', outcome: 'You chase the win — but leave space behind. The opposition break and score! They take the lead!', effect: { type: 'goal', team: 'away' } },
-      { text: 'Hold what you have — draw is ok', outcome: 'Solid, compact play sees the game through to the final whistle. A point each.', effect: { type: 'xg', uMod: 0.85, oMod: 0.80 } },
-      { text: 'Press and win the ball high', outcome: 'High press wins possession — a rapid attack ends with your striker finding the net in the 88th minute!', effect: { type: 'goal_chance', prob: 0.48, team: 'home' } },
-    ]
-  },
-  {
-    id: 'late_red_card',
-    category: 'lategame',
-    situation: 'You are down to 10 men with 20 minutes left. What do you do?',
-    options: [
-      { text: 'Reorganise the defence — drop shape', outcome: 'Tight 4-4-1 shape absorbs the pressure brilliantly — they cannot break you down. Heroic!', effect: { type: 'xg', uMod: 0.72, oMod: 0.68 } },
-      { text: 'Push on and try to score', outcome: 'Despite being a man down you push forward — it leaves gaps and the opposition punish you!', effect: { type: 'goal', team: 'away' } },
-      { text: 'Sacrifice an attacker for a midfielder', outcome: 'Smart sub gives you more midfield compactness — you defend in numbers and frustrate them.', effect: { type: 'xg', uMod: 0.78, oMod: 0.72 } },
-    ]
-  },
-  {
-    id: 'late_injury_time',
-    category: 'lategame',
-    situation: 'There is a corner in the 94th minute — you are level. What do you do?',
-    options: [
-      { text: 'Send everyone forward', outcome: 'Both centre backs arrive late at the far post — there is a scramble and the ball goes in! THE WINNER!', effect: { type: 'goal_chance', prob: 0.52, team: 'home' } },
-      { text: 'Controlled corner to avoid counter', outcome: 'Short corner to control the moment — a cross goes in but is headed clear. Into extra time!', effect: { type: 'chance', uMod: 1.2, oMod: 1.0 } },
-      { text: 'Target the keeper with bodies', outcome: 'Cluster around the keeper — confusion in the box but nobody gets a clear header.', effect: { type: 'chance', uMod: 1.1, oMod: 1.0 } },
-    ]
-  },
-  {
-    id: 'late_momentum',
-    category: 'lategame',
-    situation: 'The crowd is electric and momentum is with you. How do you use it?',
-    options: [
-      { text: 'Attack with pace and energy', outcome: 'Your team tears into them — end-to-end football with your striker getting in on goal and finishing!', effect: { type: 'goal_chance', prob: 0.58, team: 'home' } },
-      { text: 'Play controlled, keep the energy going', outcome: 'Controlled play keeps the pressure on — you dominate without the final ball but eventually carve it open.', effect: { type: 'chance', uMod: 1.3, oMod: 0.88 } },
-      { text: 'Take risks and go long', outcome: 'Long ball game wastes the momentum — they regain their composure and the moment passes.', effect: { type: 'xg', uMod: 0.90, oMod: 1.0 } },
-    ]
-  },
-  {
-    id: 'late_sub_attacking',
-    category: 'lategame',
-    situation: 'You bring on a fresh forward in the 75th minute. How do you use him?',
-    options: [
-      { text: 'Tell him to run at defenders relentlessly', outcome: 'The fresh legs cause havoc — he beats two defenders and squares for an easy tap-in! GOAL!', effect: { type: 'goal', team: 'home' } },
-      { text: 'Integrate him carefully into the shape', outcome: 'He slots in seamlessly and the team is reinvigorated — several good attacks flow from it.', effect: { type: 'chance', uMod: 1.22, oMod: 1.0 } },
-      { text: 'Use him as a target man', outcome: 'Long balls find him but he struggles against the centre backs — no real impact.', effect: { type: 'xg', uMod: 0.92, oMod: 1.0 } },
-    ]
-  },
-  {
-    id: 'late_opp_momentum',
-    category: 'lategame',
-    situation: 'The opposition are piling on pressure in the final 15 minutes. What do you do?',
-    options: [
-      { text: 'Hold shape — absorb and counter', outcome: 'Brilliant defensive organisation — you absorb wave after wave and break at pace! A counter puts you ahead!', effect: { type: 'goal_chance', prob: 0.50, team: 'home' } },
-      { text: 'Press back at them', outcome: 'Counter-pressing snuffs out their attacks — they cannot find a way through your aggressive midfield.', effect: { type: 'xg', uMod: 1.0, oMod: 0.72 } },
-      { text: 'Time-wasting and gamesmanship', outcome: 'You slow the game down — it frustrates them but the referee adds a lot of injury time! Risky.', effect: { type: 'xg', uMod: 0.80, oMod: 0.85 } },
+      { text: 'Last-ditch block on the line', outcome: 'Heroic block on the line — cleared to safety!', saves: true },
+      { text: 'Trust the keeper to claim', outcome: 'Keeper flaps — ball drops to striker for a simple finish. GOAL.', saves: false },
+      { text: 'Push out to catch offside', outcome: 'Offside trap not called — goal stands. GOAL.', saves: false },
     ]
   },
 ];
-
-/* ═══════════════════════════════════════════
-   TACTICAL DECISIONS (Opponent-Aware)
-═══════════════════════════════════════════ */
-const TACTICAL_DECISIONS = [
-  {
-    id: 'td_park_bus',
-    category: 'tactical',
-    titleFn: (m, s, opp) => `You are ${s.home > s.away ? (s.home-s.away)+'-0 up' : 'drawing'} against ${opp.name} with ${90 - m}mins left. What do you do?`,
-    condition: (m, s) => s.home >= s.away && m >= 55,
-    options: [
-      { text: 'Park the bus', logic: 'park_bus', desc: 'Deep defensive block — protect the lead' },
-      { text: 'Keep attacking', logic: 'keep_attacking', desc: 'Press for more goals' },
-      { text: 'Control possession', logic: 'control_possession', desc: 'Dominate the ball and tire them out' },
-    ]
-  },
-  {
-    id: 'td_chasing',
-    category: 'tactical',
-    titleFn: (m, s, opp) => `You have just gone behind to ${opp.name}. How do you respond?`,
-    condition: (m, s) => s.home < s.away,
-    options: [
-      { text: 'Go all out attack', logic: 'go_all_out_attack', desc: 'Push everyone forward to equalise' },
-      { text: 'Stay patient', logic: 'stay_patient', desc: 'Trust your shape, wait for the opening' },
-      { text: 'Press high', logic: 'press_high', desc: 'Win the ball back high up the pitch' },
-    ]
-  },
-  {
-    id: 'td_halftime_level',
-    category: 'tactical',
-    titleFn: (m, s, opp) => `Half time against ${opp.name}. Level at ${s.home}-${s.away}. Tactical talk?`,
-    condition: (m, s) => m >= 44 && m <= 47,
-    options: [
-      { text: 'Sit deeper and counter', logic: 'sit_deeper', desc: 'Compact shape, hit them on the break' },
-      { text: 'Increase tempo', logic: 'increase_tempo', desc: 'Start the second half at high intensity' },
-      { text: 'Exploit the wings', logic: 'exploit_wings', desc: 'Target wide areas where they look vulnerable' },
-    ]
-  },
-  {
-    id: 'td_late_winning',
-    category: 'tactical',
-    titleFn: (m, s, opp) => `${90-m} minutes left. You are winning ${s.home}-${s.away} against ${opp.name}. What is your priority?`,
-    condition: (m, s) => s.home > s.away && m >= 70,
-    options: [
-      { text: 'Drop fullbacks deep', logic: 'drop_fullbacks', desc: 'Stop their wide threat, protect the flanks' },
-      { text: 'Use your star player', logic: 'use_star_player', desc: 'Let your best player decide the match' },
-      { text: 'Long balls direct', logic: 'long_balls_direct', desc: 'Relieve pressure and run down the clock' },
-    ]
-  },
-  {
-    id: 'td_counter_attack',
-    category: 'tactical',
-    titleFn: (m, s, opp) => `${opp.name} are pushing forward. Do you counter?`,
-    condition: (m, s) => m >= 60,
-    options: [
-      { text: 'Counter attack fast', logic: 'counter_attack', desc: 'Hit them on the break immediately' },
-      { text: 'Protect star player', logic: 'protect_star', desc: 'Shield your best player from heavy pressing' },
-      { text: 'Respond aggressively', logic: 'respond_aggressively', desc: 'Match their intensity and press back' },
-    ]
-  },
-];
-
-function resolveTacticalDecision(logic, opponent, homeScore, awayScore) {
-  const opp = opponent || {};
-  const attRating = opp.attack || 80;
-  const defRating = opp.defence || 80;
-  const midRating = opp.midfield || 80;
-  const userAtt = STATE.teamRatings.attack || 75;
-
-  const highPressTeams = ['barca_0809','barca_1415','liverpool_1819','mancity_2223','atletico_1314','atletico_1516','bayern_1920'];
-  const techTeams = ['barca_0809','barca_1415','rm_1314','rm_1718','mancity_2223','bayern_1213'];
-  const isHighPress = highPressTeams.includes(opp.id);
-  const isTechnical = techTeams.includes(opp.id);
-
-  const allSquad = Object.values(STATE.squad);
-  const starPlayer = allSquad.length ? allSquad.reduce((a,b) => a.rating > b.rating ? a : b) : null;
-  const hasTallStrikers = allSquad.some(p => ['ST','CF'].includes(p.position) && p.rating > 75);
-
-  let homeGoal = false, awayGoal = false, uMod = 1.0, oMod = 1.0, type = 'neutral', outcome = '';
-
-  if (logic === 'park_bus') {
-    if (attRating > 83) {
-      const scored = Math.random() < 0.65;
-      if (scored) { awayGoal = true; type = 'bad'; outcome = `You tried to park the bus against ${opp.name || 'them'}, but their ferocious attack found a way through. They equalise!`; }
-      else { type = 'good'; uMod = 0.7; oMod = 0.5; outcome = `Against all odds, your 10-man wall held out against ${opp.name || 'them'}. Heroic defending!`; }
-    } else if (attRating >= 75) {
-      const scored = Math.random() < 0.50;
-      if (scored) { awayGoal = true; type = 'bad'; outcome = `The bus was parked but ${opp.name || 'they'} found a gap. They squeeze one in.`; }
-      else { type = 'good'; uMod = 0.7; oMod = 0.55; outcome = `Compact and disciplined. ${opp.name || 'They'} cannot break you down. The lead is held.`; }
-    } else {
-      const held = Math.random() < 0.75;
-      if (held) { type = 'good'; uMod = 0.7; oMod = 0.45; outcome = `${opp.name || 'They'} are toothless against your defensive wall. Comfortable hold.`; }
-      else { awayGoal = true; type = 'bad'; outcome = `Even against weaker opposition, a lapse in concentration lets ${opp.name || 'them'} in.`; }
-    }
-  } else if (logic === 'keep_attacking') {
-    const isWinning = homeScore > awayScore;
-    const isHighCounter = attRating > 80 && midRating > 80;
-    let scoreChance = isWinning ? 0.45 : 0.55;
-    let counterChance = isWinning ? 0.35 : 0.30;
-    if (isHighCounter) counterChance += 0.15;
-    const roll = Math.random();
-    if (roll < scoreChance) { homeGoal = true; type = 'good'; outcome = `Brave decision to keep attacking! It pays off — your team scores another. ${opp.name || 'They'} are rocked!`; }
-    else if (roll < scoreChance + counterChance) { awayGoal = true; type = 'bad'; outcome = `${opp.name || 'They'} hit you on the counter. Dangerous choice that backfired.`; }
-    else { type = 'neutral'; uMod = 1.15; outcome = `The aggressive approach creates chances but nothing goes in. The game remains tight.`; }
-  } else if (logic === 'control_possession') {
-    if (isHighPress) {
-      const lost = Math.random() < 0.45;
-      if (lost) { awayGoal = true; type = 'bad'; outcome = `${opp.name || 'They'} are one of the most intense pressing sides ever. They win the ball in a dangerous area and capitalise!`; }
-      else { type = 'good'; uMod = 1.1; oMod = 0.85; outcome = `Even under the press, your team retains the ball beautifully. Composure under pressure.`; }
-    } else {
-      const success = Math.random() < 0.75;
-      if (success) { type = 'good'; uMod = 1.15; oMod = 0.80; outcome = `Excellent possession football wears them down. You control the game and create several openings.`; }
-      else { type = 'neutral'; outcome = `Possession kept but you lack the final ball. The game stays even.`; }
-    }
-  } else if (logic === 'press_high') {
-    if (isTechnical) {
-      const played = Math.random() < 0.60;
-      if (played) { awayGoal = true; type = 'bad'; outcome = `${opp.name || 'They'} are too technically gifted. They play through your press with ease and score!`; }
-      else { type = 'good'; uMod = 1.2; oMod = 0.85; outcome = `Your press unsettles even them. You win the ball high and create a dangerous chance!`; }
-    } else {
-      const won = Math.random() < 0.65;
-      if (won) { homeGoal = true; type = 'good'; outcome = `The high press pays dividends! You win the ball in their half and convert the chance!`; }
-      else { type = 'neutral'; uMod = 1.05; oMod = 1.05; outcome = `The press is positive but disorganised. The game opens up but neither side benefits clearly.`; }
-    }
-  } else if (logic === 'sit_deeper') {
-    if (attRating > 82) {
-      const broke = Math.random() < 0.60;
-      if (broke) { awayGoal = true; type = 'bad'; outcome = `${opp.name || 'They'} eventually break through your deep block. You concede from sustained pressure.`; }
-      else { type = 'good'; uMod = 0.75; oMod = 0.60; outcome = `Deep, organised, resilient. Even their elite attack cannot find a way through.`; }
-    } else {
-      const held = Math.random() < 0.65;
-      if (held) { type = 'good'; uMod = 0.8; oMod = 0.55; outcome = `Sitting deep frustrates them completely. They have no answers for your compact shape.`; }
-      else { awayGoal = true; type = 'bad'; outcome = `Even against this attack, a moment of quality from ${opp.name || 'them'} punishes your passivity.`; }
-    }
-  } else if (logic === 'counter_attack') {
-    if (defRating < 75) {
-      const scored = Math.random() < 0.70;
-      if (scored) { homeGoal = true; type = 'good'; outcome = `Their defence is exposed on the counter! You exploit the space and score a brilliant breakaway goal!`; }
-      else { type = 'neutral'; uMod = 1.2; outcome = `The counter creates good chances but you cannot finish. Still, your team looks dangerous.`; }
-    } else if (defRating > 85) {
-      const scored = Math.random() < 0.35;
-      if (scored) { homeGoal = true; type = 'good'; outcome = `Even against their solid defence, your counter finds the net. Brilliant finishing under pressure.`; }
-      else { type = 'neutral'; uMod = 1.0; oMod = 1.1; outcome = `Their defence is well-organised. The counter is snuffed out. They retain the ball and push back.`; }
-    } else {
-      const scored = Math.random() < 0.52;
-      if (scored) { homeGoal = true; type = 'good'; outcome = `The counter attack is clinical! Your striker runs onto the through ball and finishes well.`; }
-      else { type = 'neutral'; uMod = 1.1; outcome = `Good counter-attacking play but the final ball lets you down. Keep the pressure on.`; }
-    }
-  } else if (logic === 'go_all_out_attack') {
-    const scored = Math.random() < 0.55;
-    if (scored) { homeGoal = true; type = 'good'; outcome = `The gamble pays off! You throw everyone forward and score the equaliser! The crowd goes wild!`; }
-    else { awayGoal = true; type = 'bad'; outcome = `You leave too much space at the back chasing the game. ${opp.name || 'They'} counter and extend their lead!`; }
-  } else if (logic === 'stay_patient') {
-    const scored = Math.random() < 0.40;
-    if (scored) { homeGoal = true; type = 'good'; outcome = `The patient approach works! You gradually create openings and grab the equaliser. Composed football.`; }
-    else { type = 'neutral'; oMod = 0.90; outcome = `You stay patient but running out of time. The clock ticks on — an equaliser still looks possible.`; }
-  } else if (logic === 'use_star_player') {
-    const starRating = starPlayer ? starPlayer.rating : 75;
-    const prob = starRating >= 90 ? 0.70 : starRating >= 80 ? 0.55 : 0.40;
-    const scored = Math.random() < prob;
-    const starName = starPlayer ? starPlayer.name : 'your best player';
-    if (scored) { homeGoal = true; type = 'good'; outcome = `${starName} is handed the freedom of the pitch and delivers! A moment of pure class wins you the game!`; }
-    else { type = 'neutral'; uMod = 1.1; outcome = `${starName} tries to make something happen but the opposition have him well-marked. Still dangerous.`; }
-  } else if (logic === 'protect_star') {
-    const freed = Math.random() < 0.65;
-    if (freed) { type = 'good'; uMod = 1.2; oMod = 0.9; outcome = `With your star shielded, other players find space. Your team creates good chances as the defence over-commits.`; }
-    else { type = 'neutral'; outcome = `Your star remains well-marked despite your tactical adjustment. Frustrating half.`; }
-  } else if (logic === 'increase_tempo') {
-    if (attRating < 78) {
-      const success = Math.random() < 0.70;
-      if (success) { type = 'good'; uMod = 1.25; oMod = 0.90; outcome = `The high tempo second half blows them away! You create three clear chances in five minutes!`; }
-      else { homeGoal = true; type = 'good'; outcome = `The early second half pressure pays off with a goal! The momentum is entirely with you now!`; }
-    } else {
-      const countered = Math.random() < 0.50;
-      if (countered) { awayGoal = true; type = 'bad'; outcome = `The high tempo leaves you exposed. ${opp.name || 'They'} are quality enough to hit you on the counter.`; }
-      else { type = 'good'; uMod = 1.15; oMod = 0.95; outcome = `Risky against this quality but the tempo is working — you are creating more than them.`; }
-    }
-  } else if (logic === 'exploit_wings') {
-    if (midRating < 78) { type = 'good'; uMod = 1.25; oMod = 0.90; outcome = `Their midfield cannot deal with your wide play. You get crosses in from both flanks all half!`; }
-    else if (defRating < 78) { const scored = Math.random() < 0.55; if (scored) { homeGoal = true; type = 'good'; outcome = `The wing play pays off! A brilliant cross is met with a diving header. GOAL!`; } else { type = 'good'; uMod = 1.2; outcome = `The wing overload creates constant danger. They struggle to cope with your crossing.`; } }
-    else { type = 'neutral'; uMod = 1.05; outcome = `Their defence handles the wide threat well. You need to find another way through.`; }
-  } else if (logic === 'drop_fullbacks') {
-    const stopped = Math.random() < 0.70;
-    if (stopped) { type = 'good'; oMod = 0.65; outcome = `Dropping the fullbacks removes their wide threat entirely. Solid, disciplined, effective.`; }
-    else { awayGoal = true; type = 'bad'; outcome = `Dropping back loses your width. ${opp.name || 'They'} dominate centrally and punish you through the middle.`; }
-  } else if (logic === 'long_balls_direct') {
-    if (hasTallStrikers) {
-      const worked = Math.random() < 0.55;
-      if (worked) { type = 'good'; uMod = 1.15; outcome = `Your striker holds it up brilliantly! The direct approach relieves pressure and creates a chance!`; }
-      else { type = 'neutral'; oMod = 1.05; outcome = `Some second balls won but you lose possession too easily with the direct approach.`; }
-    } else {
-      const worked = Math.random() < 0.35;
-      if (worked) { type = 'neutral'; oMod = 0.95; outcome = `The long balls relieve pressure temporarily but your strikers struggle to hold it up.`; }
-      else { oMod = 1.10; type = 'neutral'; outcome = `Without aerial ability, the long ball game simply gives ${opp.name || 'them'} possession back.`; }
-    }
-  } else if (logic === 'respond_aggressively') {
-    if (userAtt > 80) {
-      const scored = Math.random() < 0.65;
-      if (scored) { homeGoal = true; type = 'good'; outcome = `The aggressive response works! You equalise quickly and dominate the next phase!`; }
-      else { type = 'neutral'; uMod = 1.15; oMod = 0.90; outcome = `Aggressive and intense — you have the better of the exchanges but the goal won't come.`; }
-    } else {
-      const scored = Math.random() < 0.45;
-      if (scored) { homeGoal = true; type = 'good'; outcome = `The aggressive approach catches them off-guard and you equalise! Brave and effective.`; }
-      else { awayGoal = true; type = 'bad'; outcome = `The aggression leaves gaps. ${opp.name || 'They'} have too much quality and extend their lead.`; }
-    }
-  } else {
-    type = 'neutral';
-    uMod = 1.05;
-    outcome = 'Your tactical instruction is relayed — the team responds and adjusts their shape.';
-  }
-
-  return { homeGoal, awayGoal, uMod, oMod, type, outcome };
-}
-
-// Pick events: exactly 3 tactical decisions + 2-5 action events = 5-8 total
-function selectTacticalMoments(userRatings, opponent) {
-  // 3 tactical decisions at fixed minutes ~25, ~55, ~75
-  const shuffledTactical = shuffle([...TACTICAL_DECISIONS]);
-  const tacticalIds = shuffledTactical.slice(0, 3).map(e => e.id);
-
-  // 2-5 action events from MATCH_EVENTS
-  const numAction = 2 + Math.floor(Math.random() * 4); // 2-5
-  const shuffledAction = shuffle([...MATCH_EVENTS]);
-  const actionChosen = [];
-  for (let i = 0; i < shuffledAction.length && actionChosen.length < numAction; i++) {
-    const ev = shuffledAction[i];
-    const catCount = actionChosen.filter(e => e.category === ev.category).length;
-    if (catCount < 2) actionChosen.push(ev);
-  }
-  const actionIds = actionChosen.map(e => e.id);
-
-  return [...tacticalIds, ...actionIds];
-}
-
-function resolveEventEffect(option, homeScoreAtTime, awayScoreAtTime) {
-  const eff = option.effect;
-  let uMod = 1.0, oMod = 1.0;
-  let homeGoal = false, awayGoal = false;
-  let type = 'neutral';
-  let outcome = option.outcome;
-
-  if (eff.type === 'goal') {
-    if (eff.team === 'home') { homeGoal = true; type = 'good'; }
-    else { awayGoal = true; type = 'bad'; }
-  } else if (eff.type === 'goal_chance') {
-    const scored = Math.random() < eff.prob;
-    if (eff.team === 'home') {
-      if (scored) { homeGoal = true; type = 'good'; }
-      else { type = 'neutral'; }
-    } else {
-      if (scored) { awayGoal = true; type = 'bad'; }
-      else { type = 'good'; }
-    }
-  } else if (eff.type === 'gk_penalty') {
-    // Simulate: opponent shoots to random corner, keeper may guess right
-    const dirs = ['left', 'right'];
-    const shotDir = dirs[Math.random() < 0.5 ? 0 : 1];
-    const keeperDir = eff.keeperDir;
-    let saved = false;
-    if (keeperDir === 'middle') {
-      saved = Math.random() < 0.15;
-    } else {
-      saved = keeperDir === shotDir;
-    }
-    if (saved) {
-      type = 'good';
-      outcome = option.outcome.replace(/SAVED!.*/, 'SAVED! The keeper guesses correctly — brilliant save!');
-    } else {
-      awayGoal = true; type = 'bad';
-      outcome = 'The keeper dives ' + keeperDir + ' but the penalty goes ' + shotDir + '. The ball is in the net. Goal conceded.';
-    }
-  } else if (eff.type === 'chance') {
-    uMod = eff.uMod || 1.0;
-    oMod = eff.oMod || 1.0;
-    type = uMod > 1 ? 'good' : 'neutral';
-  } else if (eff.type === 'save') {
-    type = 'good';
-  } else if (eff.type === 'miss') {
-    type = 'neutral';
-  } else if (eff.type === 'xg') {
-    uMod = eff.uMod || 1.0;
-    oMod = eff.oMod || 1.0;
-    type = uMod >= oMod ? 'good' : 'neutral';
-  }
-
-  return { uMod, oMod, homeGoal, awayGoal, outcome, type };
-}
 
 /* ═══════════════════════════════════════════
    NEW PHASE-BASED MATCH ENGINE
 ═══════════════════════════════════════════ */
 let ACTIVE_MATCH = null;
+function clearEventTimers() {}
 
 function showNextMatch() {
   const t = STATE.tournament;
@@ -3214,57 +2539,28 @@ function showNextMatch() {
     opponent = remaining[0] || OPPONENT_TEAMS[Math.floor(Math.random() * OPPONENT_TEAMS.length)];
   }
 
-  // Build base xG
-  const userR = STATE.teamRatings;
-  const diff = userR.overall - opponent.overall;
-  let uXG = 1.1, oXG = 0.9;
-  const steps = diff / 5;
-  if (steps > 0) { uXG *= Math.pow(1.18, Math.min(steps,5)); oXG /= Math.pow(1.12, Math.min(steps,5)); }
-  else if (steps < 0) { oXG *= Math.pow(1.18, Math.min(-steps,5)); uXG /= Math.pow(1.12, Math.min(-steps,5)); }
-  const attMod = (userR.attack - opponent.defence) / 100;
-  const defMod = (userR.defence - opponent.attack) / 100;
-  uXG *= (1 + attMod * 0.4); oXG *= (1 - defMod * 0.3);
-  if (userR.goalkeeper < 65) oXG *= 1.10;
-  if (userR.goalkeeper > 85) oXG *= 0.85;
-  uXG = Math.max(0.3, Math.min(uXG, 2.2));
-  oXG = Math.max(0.3, Math.min(oXG, 2.2));
+  const userOverall = STATE.teamRatings.overall;
+  const ratingDiff = userOverall - opponent.overall;
+  const attackN = Math.max(1, Math.min(5, 3 + Math.round(ratingDiff / 8)));
+  const defendN = Math.max(1, Math.min(5, 3 - Math.round(ratingDiff / 8)));
 
-  const momentTypes = selectTacticalMoments(userR, opponent);
+  const atkPool = shuffle([...ATTACKING_QUESTIONS]).slice(0, attackN);
+  const defPool = shuffle([...DEFENDING_QUESTIONS]).slice(0, defendN);
 
-  // Assign minutes: first 3 are tactical decisions at ~25, ~55, ~75 with ±5 jitter
-  // Remaining are action events spread across the match
-  const tacticalMinutes = [25, 55, 75];
-  const actionWindows = [
-    { min: 8,  max: 38 },
-    { min: 42, max: 58 },
-    { min: 60, max: 78 },
-    { min: 80, max: 90 },
-    { min: 12, max: 30 },
-  ];
-  const scheduledMoments = momentTypes.map((id, i) => {
-    let min;
-    if (i < 3) {
-      min = tacticalMinutes[i] + Math.floor(Math.random() * 11) - 5;
-    } else {
-      const winIdx = (i - 3) % actionWindows.length;
-      const win = actionWindows[winIdx];
-      min = win.min + Math.floor(Math.random() * (win.max - win.min + 1));
-    }
-    return { id, minute: min };
-  }).sort((a, b) => a.minute - b.minute);
+  // Interleave attacking then defending
+  const queue = [];
+  const maxLen = Math.max(atkPool.length, defPool.length);
+  for (let i = 0; i < maxLen; i++) {
+    if (i < atkPool.length) queue.push({ ...atkPool[i], type: 'attacking' });
+    if (i < defPool.length) queue.push({ ...defPool[i], type: 'defending' });
+  }
 
   ACTIVE_MATCH = {
     opponent,
-    baseXG_u: uXG, baseXG_o: oXG,
-    xGMod_u: 1.0, xGMod_o: 1.0,
-    homeScore: 0, awayScore: 0,
-    allEvents: [],
-    phase: 0,
-    momentTypes,
-    scheduledMoments,   // [{id, minute}] sorted by minute
-    momentIndex: 0,     // which moment we're on next
-    currentMinute: 0,
-    usedMoments: new Set(momentTypes),
+    homeScore: 0,
+    awayScore: 0,
+    queue,
+    queueIndex: 0,
     fastForward: false,
     onComplete: (result) => {
       if (t.phase === 'league') {
@@ -3276,14 +2572,13 @@ function showNextMatch() {
         t.ga += result.awayScore;
         updateTournamentHeader();
         t.matchIndex++;
-        if (t.matchIndex >= 8) checkQualification();
+        if (t.matchIndex >= 4) checkQualification();
         else { updateTournamentHeader(); showContinueButton(() => showNextMatch()); }
       } else {
         t.knockoutResults.push({ ...result, opponentId: opponent.id, opponent });
         if (result.won || result.penaltyWin) {
           const rounds = ['r16','qf','sf','final'];
           if (t.phase === 'final') {
-            // Final won — show championship screen immediately
             showWinScreen(result, opponent);
           } else {
             t.phase = rounds[rounds.indexOf(t.phase) + 1];
@@ -3298,7 +2593,7 @@ function showNextMatch() {
   };
 
   renderMatchShell(opponent);
-  runMatchPhase();
+  runMatchQuestions();
 }
 
 function renderMatchShell(opponent) {
@@ -3337,308 +2632,253 @@ function renderMatchShell(opponent) {
   ffBtn.textContent = '⏩ Fast Forward';
   ffBtn.onclick = () => {
     ACTIVE_MATCH.fastForward = true;
-    clearEventTimers();
-    ffBtn.remove();
-    fastForwardMatch();
+    const ffBtnEl = document.getElementById('ff-btn');
+    if (ffBtnEl) ffBtnEl.remove();
+    runMatchQuestions();
   };
   content.appendChild(ffBtn);
 }
 
-// Phase minutes: [1-35], [36-65], [66-90]
-const PHASE_RANGES = [[1,35],[36,65],[66,90]];
-const PHASE_XG_SPLIT = [0.35, 0.35, 0.30];
-
-function runMatchPhase() {
+function runMatchQuestions() {
   const m = ACTIVE_MATCH;
-  if (m.fastForward) return;
-  const phaseIdx = m.phase;
-  const [minStart, minEnd] = PHASE_RANGES[phaseIdx];
-  const xgFrac = PHASE_XG_SPLIT[phaseIdx];
-
-  // Generate goals for this phase
-  const phaseXG_u = m.baseXG_u * xgFrac * m.xGMod_u;
-  const phaseXG_o = m.baseXG_o * xgFrac * m.xGMod_o;
-
-  let phaseHome = poissonRandom(phaseXG_u);
-  let phaseAway = poissonRandom(phaseXG_o);
-  phaseHome = Math.min(phaseHome, 2);
-  phaseAway = Math.min(phaseAway, 2);
-
-  // Star moment bonus (phase 3 only, 8% chance)
-  const legends = Object.values(STATE.squad).filter(p => p.tier === 'Legend');
-  if (phaseIdx === 2 && legends.length > 0 && Math.random() < 0.08) phaseHome++;
-
-  // Generate events for this phase
-  const phaseEvents = generatePhaseEvents(phaseHome, phaseAway, m.opponent, minStart, minEnd);
-  m.allEvents.push(...phaseEvents);
-  m.homeScore += phaseHome;
-  m.awayScore += phaseAway;
-
-  // Find any scheduled moments in this phase's minute range
-  const phaseMoments = m.scheduledMoments.filter(sm =>
-    sm.minute >= minStart && sm.minute <= minEnd && !m.usedMoments_shown?.has(sm.id)
-  );
-
-  // Reveal events, then show any tactical moments for this phase, then continue
-  revealPhaseEvents(phaseEvents, m.homeScore, m.awayScore, () => {
-    m.phase++;
-    // Show moments for this phase sequentially
-    const showPhaseMoments = (idx, done) => {
-      if (idx >= phaseMoments.length) { done(); return; }
-      const sm = phaseMoments[idx];
-      if (!m.usedMoments_shown) m.usedMoments_shown = new Set();
-      m.usedMoments_shown.add(sm.id);
-      showTacticalMoment(sm.id, m.homeScore, m.awayScore, () => {
-        showPhaseMoments(idx + 1, done);
-      });
-    };
-    showPhaseMoments(0, () => {
-      if (m.phase < 3) {
-        runMatchPhase();
+  if (m.fastForward) {
+    while (m.queueIndex < m.queue.length) {
+      const q = m.queue[m.queueIndex];
+      if (q.type === 'attacking') {
+        if (Math.random() < 2/3) m.homeScore++;
       } else {
-        // Show any remaining moments not yet shown (scheduled after phase 3)
-        const remaining = m.scheduledMoments.filter(sm =>
-          !m.usedMoments_shown?.has(sm.id)
-        );
-        const showRemaining = (idx, done) => {
-          if (idx >= remaining.length) { done(); return; }
-          if (!m.usedMoments_shown) m.usedMoments_shown = new Set();
-          m.usedMoments_shown.add(remaining[idx].id);
-          showTacticalMoment(remaining[idx].id, m.homeScore, m.awayScore, () => {
-            showRemaining(idx + 1, done);
-          });
-        };
-        showRemaining(0, finishMatch);
+        if (Math.random() >= 1/3) m.awayScore++;
       }
-    });
+      m.queueIndex++;
+    }
+    const sH = document.getElementById('score-home');
+    const sA = document.getElementById('score-away');
+    if (sH) sH.textContent = m.homeScore;
+    if (sA) sA.textContent = m.awayScore;
+    finishMatch();
+    return;
+  }
+
+  if (m.queueIndex >= m.queue.length) {
+    finishMatch();
+    return;
+  }
+
+  const q = m.queue[m.queueIndex];
+  showMatchQuestion(q, () => {
+    m.queueIndex++;
+    setTimeout(() => runMatchQuestions(), 800);
   });
 }
 
-function generatePhaseEvents(homeGoals, awayGoals, opponent, minStart, minEnd) {
-  const events = [];
-  const usedMins = new Set();
-  const myPlayers = Object.values(STATE.squad);
-  const attPos = ['ST','CF','LW','RW','CAM'];
-  const midPos = ['CM','CDM','CAM','LM','RM'];
-  const defPos = ['CB','LB','RB','LWB','RWB'];
-
-  function rMin() {
-    let m;
-    do { m = minStart + Math.floor(Math.random() * (minEnd - minStart + 1)); }
-    while (usedMins.has(m));
-    usedMins.add(m); return m;
-  }
-  function pickScorer() {
-    const att = myPlayers.filter(p => attPos.includes(p.position));
-    const mid = myPlayers.filter(p => midPos.includes(p.position));
-    const def = myPlayers.filter(p => defPos.includes(p.position));
-    const r = Math.random();
-    if (r < 0.60 && att.length) return att[Math.floor(Math.random()*att.length)];
-    if (r < 0.90 && mid.length) return mid[Math.floor(Math.random()*mid.length)];
-    return def.length ? def[Math.floor(Math.random()*def.length)] : myPlayers[0];
-  }
-
-  for (let i = 0; i < homeGoals; i++) {
-    const scorer = pickScorer();
-    const t = GOAL_TEMPLATES[Math.floor(Math.random()*GOAL_TEMPLATES.length)];
-    events.push({ minute:rMin(), side:'home', type:'goal', text:t.replace('{player}',scorer.name) });
-  }
-  for (let i = 0; i < awayGoals; i++) {
-    const t = OPP_GOAL_TEMPLATES[Math.floor(Math.random()*OPP_GOAL_TEMPLATES.length)];
-    events.push({ minute:rMin(), side:'away', type:'goal', text:t.replace('{team}',opponent.name) });
-  }
-  // 1 atmosphere event per phase
-  const atmos = ATMOSPHERE_TEMPLATES[Math.floor(Math.random()*ATMOSPHERE_TEMPLATES.length)];
-  const rndPlayer = myPlayers[Math.floor(Math.random()*myPlayers.length)];
-  events.push({ minute:rMin(), side:'none', type:'atmos', text:atmos.replace('{player}',rndPlayer.name).replace('{team}',opponent.name) });
-
-  // Star event (35% chance)
-  const legs = myPlayers.filter(p=>p.tier==='Legend');
-  if (legs.length > 0 && Math.random() < 0.35) {
-    const star = legs[Math.floor(Math.random()*legs.length)];
-    const st = STAR_TEMPLATES[Math.floor(Math.random()*STAR_TEMPLATES.length)];
-    events.push({ minute:rMin(), side:'none', type:'star', text:st.replace('{player}',star.name) });
-  }
-
-  events.sort((a,b) => a.minute - b.minute);
-  return events;
-}
-
-let eventTimers = [];
-function clearEventTimers() { eventTimers.forEach(t => clearTimeout(t)); eventTimers = []; }
-
-function revealPhaseEvents(events, homeTotal, awayTotal, onComplete) {
-  clearEventTimers();
-  const eventsEl = document.getElementById('match-events');
-  if (!eventsEl) { onComplete(); return; }
-
-  // Figure out current score before this phase
-  const prevHome = homeTotal - events.filter(e=>e.side==='home').length;
-  const prevAway = awayTotal - events.filter(e=>e.side==='away').length;
-  let h = prevHome, a = prevAway;
-  let delay = 350;
-
-  events.forEach(ev => {
-    const t = setTimeout(() => {
-      if (ev.side === 'home') h++;
-      else if (ev.side === 'away') a++;
-      const scoreH = document.getElementById('score-home');
-      const scoreA = document.getElementById('score-away');
-      if (scoreH) scoreH.textContent = h;
-      if (scoreA) scoreA.textContent = a;
-      const liveEl = document.getElementById('live-score');
-      if (liveEl) liveEl.textContent = h + ' – ' + a;
-
-      const row = document.createElement('div');
-      let cls = 'match-event';
-      let prefix = '';
-      if (ev.type === 'goal') {
-        if (ev.side === 'home') { cls += ' goal'; prefix = '⚽ GOAL! '; }
-        else { cls += ' away-goal'; prefix = '⚽ GOAL! '; }
-      } else if (ev.type === 'save') {
-        cls += ' save-event'; prefix = '🧤 SAVED! ';
-      } else if (ev.type === 'miss') {
-        cls += ' miss-event'; prefix = '💨 Missed! ';
-      } else if (ev.type === 'post') {
-        cls += ' miss-event'; prefix = '📏 Off the post! ';
-      } else if (ev.type === 'star') {
-        cls += ' star';
-      }
-      row.className = cls;
-      row.innerHTML = `<span class="match-event-min">${ev.minute}'</span><span>${prefix}${ev.text}</span>`;
-      eventsEl.appendChild(row);
-
-      // After a goal, show score strip
-      if (ev.type === 'goal') {
-        const strip = document.createElement('div');
-        strip.className = 'score-update-strip';
-        strip.textContent = `Score: ${h} – ${a}`;
-        eventsEl.appendChild(strip);
-      }
-
-      eventsEl.scrollTop = eventsEl.scrollHeight;
-    }, delay);
-    eventTimers.push(t);
-    delay += 500;
-  });
-
-  const doneT = setTimeout(onComplete, delay + 150);
-  eventTimers.push(doneT);
-}
-
-function showTacticalMoment(eventId, homeScore, awayScore, onComplete) {
-  if (ACTIVE_MATCH.fastForward) { onComplete(); return; }
+function showMatchQuestion(q, onComplete) {
+  const m = ACTIVE_MATCH;
   const content = document.getElementById('tournament-content');
 
-  // Look for event in both MATCH_EVENTS and TACTICAL_DECISIONS
-  const eventDef = MATCH_EVENTS.find(e => e.id === eventId) || TACTICAL_DECISIONS.find(e => e.id === eventId);
-  if (!eventDef) { onComplete(); return; }
+  const existing = document.getElementById('match-question-panel');
+  if (existing) existing.remove();
 
-  // Find the scheduled minute for this event
-  const sm = (ACTIVE_MATCH.scheduledMoments || []).find(s => s.id === eventId);
-  const minute = sm ? sm.minute : (PHASE_RANGES[Math.min(ACTIVE_MATCH.phase, 2)][0]);
-  const isTactical = !!TACTICAL_DECISIONS.find(e => e.id === eventId);
-  const score = { home: homeScore, away: awayScore };
-  const opp = ACTIVE_MATCH.opponent;
+  const shuffledOptions = shuffle([...q.options]);
 
-  // Build situation text
-  let situationText = eventDef.situation || '';
-  if (isTactical && eventDef.titleFn) {
-    situationText = eventDef.titleFn(minute, score, opp);
-  }
+  const panel = document.createElement('div');
+  panel.id = 'match-question-panel';
+  panel.className = 'match-question-panel';
 
-  const momentEl = document.createElement('div');
-  momentEl.className = 'tactical-moment';
-  momentEl.id = 'tactical-moment-' + eventId;
-  momentEl.innerHTML = `
-    <div class="tactical-moment-header">
-      <span class="tactical-moment-badge">${isTactical ? 'Tactical Decision' : 'Match Situation'}</span>
-      <span class="tactical-moment-min">${minute}'</span>
-      <span style="font-size:0.72rem;color:var(--text-muted);margin-left:auto">${homeScore} – ${awayScore}</span>
+  const qNum = m.queueIndex + 1;
+  const total = m.queue.length;
+  const typeLabel = q.type === 'attacking' ? '⚽ CHANCE TO SCORE' : '🛡️ DEFEND YOUR GOAL';
+
+  panel.innerHTML = `
+    <div class="mq-header">
+      <span class="mq-type ${q.type}">${typeLabel}</span>
+      <span class="mq-counter">${qNum} / ${total}</span>
     </div>
-    <div class="tactical-moment-title">${situationText}</div>
-    <div class="choice-buttons" id="choice-buttons-${eventId}">
-      ${eventDef.options.map((opt, i) => `
-        <button class="btn-choice" onclick="pickTacticalChoice('${eventId}', ${i}, ${homeScore}, ${awayScore}, ${isTactical})">
-          <span class="btn-choice-title">${opt.text}</span>
-          ${opt.desc ? `<span class="btn-choice-desc">${opt.desc}</span>` : ''}
-        </button>
-      `).join('')}
-    </div>
-    <div id="choice-result-${eventId}" style="display:none"></div>
+    <div class="mq-situation">${q.situation}</div>
+    <div class="mq-buttons" id="mq-buttons"></div>
+    <div class="mq-outcome" id="mq-outcome" style="display:none"></div>
   `;
-  content.appendChild(momentEl);
 
-  ACTIVE_MATCH._momentCallback = onComplete;
-  ACTIVE_MATCH._currentMomentId = eventId;
-}
+  content.appendChild(panel);
 
-function pickTacticalChoice(eventId, optionIdx, homeScore, awayScore, isTactical) {
-  const eventDef = MATCH_EVENTS.find(e => e.id === eventId) || TACTICAL_DECISIONS.find(e => e.id === eventId);
-  if (!eventDef) return;
+  const btnContainer = document.getElementById('mq-buttons');
+  shuffledOptions.forEach((opt) => {
+    const btn = document.createElement('button');
+    btn.className = 'btn-mq';
+    btn.textContent = opt.text;
+    btn.onclick = () => {
+      btnContainer.querySelectorAll('.btn-mq').forEach(b => b.disabled = true);
 
-  // Disable all choice buttons in this moment
-  const btnsEl = document.getElementById('choice-buttons-' + eventId);
-  if (btnsEl) btnsEl.querySelectorAll('.btn-choice').forEach(b => b.disabled = true);
+      const scored = q.type === 'attacking' && opt.scores;
+      const saved  = q.type === 'defending' && opt.saves;
+      const conceded = q.type === 'defending' && !opt.saves;
 
-  const option = eventDef.options[optionIdx];
-  let effect;
+      if (scored) m.homeScore++;
+      if (conceded) m.awayScore++;
 
-  if (isTactical && option.logic) {
-    // Use opponent-aware tactical resolution
-    const r = resolveTacticalDecision(option.logic, ACTIVE_MATCH.opponent, ACTIVE_MATCH.homeScore, ACTIVE_MATCH.awayScore);
-    effect = { uMod: r.uMod, oMod: r.oMod, homeGoal: r.homeGoal, awayGoal: r.awayGoal, outcome: r.outcome, type: r.type };
-  } else {
-    effect = resolveEventEffect(option, homeScore, awayScore);
-  }
+      const sH = document.getElementById('score-home');
+      const sA = document.getElementById('score-away');
+      const liveEl = document.getElementById('live-score');
+      if (sH) sH.textContent = m.homeScore;
+      if (sA) sA.textContent = m.awayScore;
+      if (liveEl) liveEl.textContent = m.homeScore + ' – ' + m.awayScore;
 
-  // Apply xG modifiers
-  ACTIVE_MATCH.xGMod_u *= effect.uMod || 1;
-  ACTIVE_MATCH.xGMod_o *= effect.oMod || 1;
+      const outcomeEl = document.getElementById('mq-outcome');
+      if (outcomeEl) {
+        let badge = '';
+        if (scored) badge = '<span class="mq-badge goal">⚽ GOAL!</span>';
+        else if (saved) badge = '<span class="mq-badge save">🧤 SAVED!</span>';
+        else if (conceded) badge = '<span class="mq-badge concede">❌ GOAL CONCEDED</span>';
+        else badge = '<span class="mq-badge miss">🌬️ MISS</span>';
+        outcomeEl.innerHTML = badge + '<div class="mq-outcome-text">' + opt.outcome + '</div>';
+        outcomeEl.style.display = 'block';
+      }
 
-  // Apply direct goals
-  if (effect.homeGoal) awardGoal('home');
-  if (effect.awayGoal) awardGoal('away');
+      btn.classList.add(scored || saved ? 'correct' : 'wrong');
 
-  // Build outcome text with score
-  let outcomeText = effect.outcome || option.outcome || '';
-  if (effect.homeGoal || effect.awayGoal) {
-    outcomeText += ' Score: ' + ACTIVE_MATCH.homeScore + '–' + ACTIVE_MATCH.awayScore + '.';
-  }
-
-  const resultEl = document.getElementById('choice-result-' + eventId);
-  if (resultEl) {
-    resultEl.style.display = 'block';
-    resultEl.className = `choice-result ${effect.type || 'neutral'}`;
-    resultEl.textContent = outcomeText;
-  }
-
-  const cb = ACTIVE_MATCH._momentCallback;
-  setTimeout(() => {
-    const momentEl = document.getElementById('tactical-moment-' + eventId);
-    if (momentEl) momentEl.style.opacity = '0';
-    setTimeout(() => {
-      if (momentEl) momentEl.remove();
-      if (cb) cb();
-    }, 300);
-  }, 2000);
+      setTimeout(() => {
+        panel.remove();
+        onComplete();
+      }, 2000);
+    };
+    btnContainer.appendChild(btn);
+  });
 }
 
 /* ═══════════════════════════════════════════
    PENALTY SHOOTOUT
 ═══════════════════════════════════════════ */
 function startPenaltyShootout(onComplete) {
+  const m = ACTIVE_MATCH;
+  const oppName = m.opponent.name;
   const state = {
-    round: 1,
-    userScore: 0,
-    oppScore: 0,
-    userKicks: [],
-    oppKicks: [],
-    phase: 'user',
-    finished: false,
+    userScore: 0, oppScore: 0,
+    userKicks: 0, oppKicks: 0,
+    maxKicks: 5,
     onComplete
   };
-  renderShootoutPanel(state);
+
+  const content = document.getElementById('tournament-content');
+
+  function renderShootout() {
+    const old = document.getElementById('shootout-panel');
+    if (old) old.remove();
+
+    const panel = document.createElement('div');
+    panel.id = 'shootout-panel';
+    panel.className = 'shootout-panel';
+
+    const userDots = Array.from({length: Math.max(state.maxKicks, state.userKicks)}, (_, i) => {
+      if (i < state.userKicks) return '<span class="sk-dot scored">⚽</span>';
+      return '<span class="sk-dot pending">○</span>';
+    }).join('');
+    const oppDots = Array.from({length: Math.max(state.maxKicks, state.oppKicks)}, (_, i) => {
+      if (i < state.oppKicks) return '<span class="sk-dot scored">⚽</span>';
+      return '<span class="sk-dot pending">○</span>';
+    }).join('');
+
+    panel.innerHTML = `
+      <div class="shootout-title">⚽ PENALTY SHOOTOUT</div>
+      <div class="shootout-score-row">
+        <div class="ss-team">Your XI<br><span class="ss-score">${state.userScore}</span></div>
+        <div class="ss-sep">–</div>
+        <div class="ss-team">${oppName}<br><span class="ss-score">${state.oppScore}</span></div>
+      </div>
+      <div class="shootout-dots-row">
+        <div class="sd-side">${userDots}</div>
+        <div class="sd-label">kicks</div>
+        <div class="sd-side">${oppDots}</div>
+      </div>
+      <div id="shootout-action"></div>
+      <div id="shootout-log" class="shootout-log"></div>
+    `;
+    content.appendChild(panel);
+  }
+
+  function addLog(text, cls) {
+    const log = document.getElementById('shootout-log');
+    if (!log) return;
+    const row = document.createElement('div');
+    row.className = 'sl-row ' + (cls || '');
+    row.textContent = text;
+    log.appendChild(row);
+    log.scrollTop = log.scrollHeight;
+  }
+
+  function checkWinner() {
+    if (state.userKicks === state.oppKicks) {
+      const maxK = state.maxKicks;
+      if (state.userKicks >= maxK) {
+        if (state.userScore > state.oppScore) { endShootout(true); return true; }
+        if (state.oppScore > state.userScore) { endShootout(false); return true; }
+        state.maxKicks++;
+      }
+      const remaining = state.maxKicks - state.userKicks;
+      if (state.oppScore - state.userScore > remaining) { endShootout(false); return true; }
+      if (state.userScore - state.oppScore > remaining) { endShootout(true); return true; }
+    }
+    return false;
+  }
+
+  function endShootout(userWon) {
+    const actionEl = document.getElementById('shootout-action');
+    if (actionEl) {
+      actionEl.innerHTML = `<div class="shootout-result ${userWon ? 'win' : 'loss'}">${userWon ? '🎉 You win the shootout!' : '💔 You lose the shootout.'}</div>`;
+    }
+    setTimeout(() => onComplete(userWon), 1500);
+  }
+
+  function userKickPhase() {
+    renderShootout();
+    const actionEl = document.getElementById('shootout-action');
+    if (!actionEl) return;
+    actionEl.innerHTML = `
+      <div class="shootout-prompt">Your kick — where do you shoot?</div>
+      <div class="shootout-btns">
+        <button class="btn-shoot" onclick="window._handleUserShoot('left')">⬅️ Left</button>
+        <button class="btn-shoot" onclick="window._handleUserShoot('middle')">🎯 Middle</button>
+        <button class="btn-shoot" onclick="window._handleUserShoot('right')">➡️ Right</button>
+      </div>
+    `;
+    window._handleUserShoot = (dir) => {
+      document.querySelectorAll('.btn-shoot').forEach(b => b.disabled = true);
+      const keeperGuess = ['left','middle','right'][Math.floor(Math.random() * 3)];
+      const scored = keeperGuess !== dir;
+      if (scored) state.userScore++;
+      state.userKicks++;
+      addLog(scored ? `⚽ You scored! (keeper guessed ${keeperGuess})` : `🧤 Saved! Keeper guessed ${keeperGuess} — same as you.`, scored ? 'goal' : 'save');
+      setTimeout(() => {
+        if (!checkWinner()) oppKickPhase();
+      }, 1200);
+    };
+  }
+
+  function oppKickPhase() {
+    renderShootout();
+    const actionEl = document.getElementById('shootout-action');
+    if (!actionEl) return;
+    actionEl.innerHTML = `
+      <div class="shootout-prompt">${oppName} kick — where does your keeper dive?</div>
+      <div class="shootout-btns">
+        <button class="btn-shoot" onclick="window._handleKeeperDive('left')">⬅️ Dive Left</button>
+        <button class="btn-shoot" onclick="window._handleKeeperDive('middle')">🧤 Stay Middle</button>
+        <button class="btn-shoot" onclick="window._handleKeeperDive('right')">➡️ Dive Right</button>
+      </div>
+    `;
+    window._handleKeeperDive = (dir) => {
+      document.querySelectorAll('.btn-shoot').forEach(b => b.disabled = true);
+      const oppShot = ['left','middle','right'][Math.floor(Math.random() * 3)];
+      const saved = dir === oppShot;
+      if (!saved) state.oppScore++;
+      state.oppKicks++;
+      addLog(saved ? `🧤 Saved! You guessed ${dir} — they shot ${oppShot}!` : `❌ GOAL. They shot ${oppShot}, you dived ${dir}.`, saved ? 'save' : 'goal');
+      setTimeout(() => {
+        if (!checkWinner()) userKickPhase();
+      }, 1200);
+    };
+  }
+
+  renderShootout();
+  userKickPhase();
 }
 
 function renderShootoutPanel(state) {
@@ -3847,115 +3087,34 @@ function finishShootout(state) {
 
 function finishMatch() {
   const m = ACTIVE_MATCH;
-  let homeScore = m.homeScore;
-  let awayScore = m.awayScore;
+  const homeScore = m.homeScore;
+  const awayScore = m.awayScore;
+  const won = homeScore > awayScore;
+  const drew = homeScore === awayScore;
+  const lost = homeScore < awayScore;
 
-  // Upset flip (5%)
-  if (Math.random() < 0.05) { const tmp = homeScore; homeScore = awayScore; awayScore = tmp; }
-  homeScore = Math.min(homeScore, 5); awayScore = Math.min(awayScore, 5);
-
-  let won = homeScore > awayScore;
-  let drew = homeScore === awayScore;
-  let lost = homeScore < awayScore;
-  let penaltyWin = false;
+  const ffBtn = document.getElementById('ff-btn');
+  if (ffBtn) ffBtn.remove();
 
   // Knockout draw → penalty shootout
   if (drew && STATE.tournament.phase !== 'league') {
-    m.homeScore = homeScore;
-    m.awayScore = awayScore;
     startPenaltyShootout((userWon) => {
-      const result = {
-        homeScore: m.homeScore, awayScore: m.awayScore,
-        won: userWon, drew: false, lost: !userWon,
-        penaltyWin: userWon,
-        events: m.allEvents, summary: generateSummary(userWon, !userWon, false, STATE.teamRatings, m.opponent),
-        opponentId: m.opponent.id
-      };
+      const result = { homeScore, awayScore, won: userWon, drew: false, lost: !userWon, penaltyWin: userWon, opponentId: m.opponent.id };
       m.onComplete(result);
     });
-    return; // penalty shootout async — rest of finishMatch runs in callback
+    return;
   }
 
-  m.homeScore = homeScore;
-  m.awayScore = awayScore;
-
-  const summary = generateSummary(won, lost, drew, STATE.teamRatings, m.opponent);
-  const summEl = document.getElementById('match-summary');
-  if (summEl) { summEl.style.display = 'block'; summEl.textContent = summary; }
-
-  // Update final score display colours
   const sH = document.getElementById('score-home');
   const sA = document.getElementById('score-away');
   if (sH) sH.style.color = won ? 'var(--win-color)' : lost ? 'var(--loss-color)' : 'var(--text-primary)';
   if (sA) sA.style.color = lost ? 'var(--win-color)' : won ? 'var(--loss-color)' : 'var(--text-primary)';
 
-  const ffBtn = document.getElementById('ff-btn');
-  if (ffBtn) ffBtn.remove();
-
-  const result = { homeScore, awayScore, won, drew, lost, penaltyWin,
-    events: m.allEvents, summary, opponentId: m.opponent.id };
-
+  const result = { homeScore, awayScore, won, drew, lost, penaltyWin: false, opponentId: m.opponent.id };
   m.onComplete(result);
 }
 
-function fastForwardMatch() {
-  const m = ACTIVE_MATCH;
-  // Auto-resolve all remaining phases with neutral option (index 1)
-  for (let ph = m.phase; ph < 3; ph++) {
-    const [minStart, minEnd] = PHASE_RANGES[ph];
-    const xgFrac = PHASE_XG_SPLIT[ph];
-    const phaseXG_u = m.baseXG_u * xgFrac * m.xGMod_u;
-    const phaseXG_o = m.baseXG_o * xgFrac * m.xGMod_o;
-    let pH = Math.min(poissonRandom(phaseXG_u), 2);
-    let pA = Math.min(poissonRandom(phaseXG_o), 2);
-    m.homeScore += pH; m.awayScore += pA;
 
-    // Auto-pick all tactical moments in this phase range (neutral/middle option)
-    const phaseMoments = (m.scheduledMoments || []).filter(sm =>
-      sm.minute >= minStart && sm.minute <= minEnd
-    );
-    phaseMoments.forEach(sm => {
-      const ed = MATCH_EVENTS.find(e => e.id === sm.id) || TACTICAL_DECISIONS.find(e => e.id === sm.id);
-      if (ed) {
-        const midIdx = Math.floor(ed.options.length / 2);
-        const isTactical = !!TACTICAL_DECISIONS.find(e => e.id === sm.id);
-        let eff;
-        if (isTactical && ed.options[midIdx].logic) {
-          const r = resolveTacticalDecision(ed.options[midIdx].logic, m.opponent, m.homeScore, m.awayScore);
-          eff = r;
-        } else {
-          eff = resolveEventEffect(ed.options[midIdx], m.homeScore, m.awayScore);
-        }
-        m.xGMod_u *= eff.uMod || 1;
-        m.xGMod_o *= eff.oMod || 1;
-        if (eff.homeGoal) m.homeScore++;
-        if (eff.awayGoal) m.awayScore++;
-      }
-    });
-    const phEvents = generatePhaseEvents(pH, pA, m.opponent, minStart, minEnd);
-    m.allEvents.push(...phEvents);
-  }
-
-  // Instant display
-  const eventsEl = document.getElementById('match-events');
-  if (eventsEl) {
-    eventsEl.innerHTML = '';
-    m.allEvents.forEach(ev => {
-      const row = document.createElement('div');
-      row.className = 'match-event'+(ev.type==='goal'?' goal':ev.type==='star'?' star':'');
-      row.innerHTML = `<span class="match-event-min">${ev.minute}'</span><span>${ev.text}</span>`;
-      row.style.animation = 'none'; row.style.opacity = '1';
-      eventsEl.appendChild(row);
-    });
-  }
-  const sH = document.getElementById('score-home');
-  const sA = document.getElementById('score-away');
-  if (sH) sH.textContent = m.homeScore;
-  if (sA) sA.textContent = m.awayScore;
-
-  m.phase = 3;
-  finishMatch();
-}
 
 function showContinueButton(cb) {
   const content = document.getElementById('tournament-content');
@@ -3992,8 +3151,8 @@ function showContinueButton(cb) {
   continueBtn.className = 'btn btn-primary';
 
   if (t.phase === 'league') {
-    const remaining = 8 - t.matchIndex;
-    continueBtn.textContent = remaining > 0 ? `Match Day ${t.matchIndex + 1} →` : 'View Standings';
+    const remaining = 4 - t.matchIndex;
+    continueBtn.textContent = remaining > 0 ? `Match Day ${t.matchIndex + 1} →` : 'View Group Results';
   } else {
     const labels = { r16:'Quarter-Final →', qf:'Semi-Final →', sf:'Final →', final:'Celebrate!' };
     continueBtn.textContent = labels[t.phase] || 'Continue →';
@@ -4012,14 +3171,14 @@ function checkQualification() {
   const banner = document.createElement('div');
   banner.className = 'match-display';
 
-  if (t.points >= 13) {
+  if (t.wins >= 2) {
     t.qualified = true;
-    const dominance = t.points >= 18 ? 'Dominant' : t.points >= 16 ? 'Comfortable' : '';
+    const dominance = t.wins >= 4 ? 'Dominant' : t.wins >= 3 ? 'Comfortable' : '';
     banner.innerHTML = `
       <div class="qualification-banner">
         <div class="qual-icon">✅</div>
         <div class="qual-title">Qualified!</div>
-        <div class="qual-subtitle">${dominance ? dominance + ' qualification.' : 'You scraped through.'} ${t.points} points from 8 matches. (${t.wins}W ${t.draws}D ${t.losses}L · ${t.gf} scored, ${t.ga} conceded)</div>
+        <div class="qual-subtitle">${dominance ? dominance + ' qualification.' : 'You scraped through.'} ${t.wins}W ${t.draws}D ${t.losses}L from 4 matches. (${t.gf} scored, ${t.ga} conceded)</div>
       </div>
     `;
     content.appendChild(banner);
@@ -4041,7 +3200,7 @@ function checkQualification() {
       <div class="qualification-banner">
         <div class="qual-icon">❌</div>
         <div class="qual-title">Eliminated.</div>
-        <div class="qual-subtitle">Only ${t.points} points. You needed 13 to qualify.<br>${t.wins}W ${t.draws}D ${t.losses}L · ${t.gf} scored, ${t.ga} conceded</div>
+        <div class="qual-subtitle">Only ${t.wins} win${t.wins === 1 ? "" : "s"} from 4 games. You needed 2 wins to qualify.<br>${t.wins}W ${t.draws}D ${t.losses}L · ${t.gf} scored, ${t.ga} conceded</div>
       </div>
     `;
     content.appendChild(banner);
@@ -4273,18 +3432,7 @@ function awardGoal(team) {
   if (liveEl) liveEl.textContent = ACTIVE_MATCH.homeScore + ' – ' + ACTIVE_MATCH.awayScore;
 }
 
-function poissonRandom(lambda) {
-  // approximation of Poisson distribution
-  let k = 0, p = Math.random();
-  let cumP = Math.exp(-lambda);
-  let sum = cumP;
-  while (p > sum && k < 8) {
-    k++;
-    cumP *= lambda / k;
-    sum += cumP;
-  }
-  return k;
-}
+
 
 /* generateMatchEvents removed — replaced by generatePhaseEvents above */
 
