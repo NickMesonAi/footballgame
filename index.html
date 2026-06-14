@@ -1289,7 +1289,7 @@ h1, h2, h3 { font-family: 'Bebas Neue', sans-serif; letter-spacing: 0.04em; colo
 /* ── Match Question Panel ── */
 .match-question-panel {
   background: var(--bg-card);
-  border: 1px solid var(--border-color);
+  border: 1px solid var(--border);
   border-radius: 12px;
   padding: 20px;
   margin-top: 16px;
@@ -1320,8 +1320,8 @@ h1, h2, h3 { font-family: 'Bebas Neue', sans-serif; letter-spacing: 0.04em; colo
 }
 .mq-buttons { display: flex; flex-direction: column; gap: 8px; }
 .btn-mq {
-  background: var(--bg-panel);
-  border: 1px solid var(--border-color);
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
   border-radius: 8px;
   color: var(--text-primary);
   padding: 12px 16px;
@@ -1335,7 +1335,7 @@ h1, h2, h3 { font-family: 'Bebas Neue', sans-serif; letter-spacing: 0.04em; colo
 .btn-mq:disabled { cursor: default; opacity: 0.7; }
 .btn-mq.correct { border-color: #22c55e; background: rgba(34,197,94,0.15); color: #22c55e; }
 .btn-mq.wrong { border-color: #ef4444; background: rgba(239,68,68,0.1); }
-.mq-outcome { margin-top: 14px; padding: 12px; background: var(--bg-panel); border-radius: 8px; }
+.mq-outcome { margin-top: 14px; padding: 12px; background: var(--bg-surface); border-radius: 8px; }
 .mq-badge {
   display: inline-block;
   font-size: 0.8rem;
@@ -1349,6 +1349,91 @@ h1, h2, h3 { font-family: 'Bebas Neue', sans-serif; letter-spacing: 0.04em; colo
 .mq-badge.concede { background: rgba(239,68,68,0.2); color: #ef4444; }
 .mq-badge.miss { background: rgba(255,255,255,0.1); color: var(--text-muted); }
 .mq-outcome-text { font-size: 0.85rem; color: var(--text-secondary); line-height: 1.5; }
+
+/* ── Penalty Shootout ── */
+.shootout-panel {
+  background: var(--bg-card);
+  border: 2px solid var(--accent-gold);
+  border-radius: 12px;
+  padding: 20px;
+  margin-top: 16px;
+}
+.shootout-title {
+  text-align: center;
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.6rem;
+  color: var(--accent-gold);
+  letter-spacing: 0.1em;
+  margin-bottom: 12px;
+}
+.shootout-score-row {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 20px;
+  margin-bottom: 12px;
+}
+.ss-team {
+  text-align: center;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+.ss-score {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 2.2rem;
+  color: var(--text-primary);
+  display: block;
+}
+.ss-sep { font-size: 1.5rem; color: var(--text-muted); }
+.shootout-dots-row {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.sd-side { display: flex; gap: 4px; }
+.sd-label { font-size: 0.7rem; color: var(--text-muted); }
+.sk-dot { font-size: 1rem; }
+.sk-dot.pending { opacity: 0.3; }
+.shootout-prompt {
+  text-align: center;
+  font-weight: 600;
+  margin-bottom: 12px;
+  color: var(--text-primary);
+}
+.shootout-btns {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+}
+.btn-shoot {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text-primary);
+  padding: 10px 18px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color 0.15s;
+}
+.btn-shoot:hover:not(:disabled) { border-color: var(--accent-gold); }
+.btn-shoot:disabled { opacity: 0.5; cursor: default; }
+.shootout-log {
+  margin-top: 12px;
+  max-height: 120px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.sl-row { font-size: 0.82rem; padding: 4px 8px; border-radius: 4px; }
+.sl-row.goal { color: #22c55e; background: rgba(34,197,94,0.08); }
+.sl-row.save { color: var(--accent-blue); background: rgba(0,180,255,0.08); }
+.shootout-result { text-align: center; font-size: 1.2rem; font-weight: 700; padding: 12px; }
+.shootout-result.win { color: #22c55e; }
+.shootout-result.loss { color: #ef4444; }
 
 </style>
 </head>
@@ -2879,210 +2964,6 @@ function startPenaltyShootout(onComplete) {
 
   renderShootout();
   userKickPhase();
-}
-
-function renderShootoutPanel(state) {
-  if (ACTIVE_MATCH && ACTIVE_MATCH.fastForward) {
-    // Auto-resolve: simulate 5 kicks each
-    let uS = 0, oS = 0;
-    for (let i = 0; i < 5; i++) {
-      if (Math.random() > 0.25) uS++;
-      if (Math.random() > 0.25) oS++;
-    }
-    if (uS === oS) { uS > oS ? uS++ : oS++; } // avoid draw
-    state.onComplete(uS > oS);
-    return;
-  }
-
-  const content = document.getElementById('tournament-content');
-  // Remove old shootout panel if exists
-  const old = document.getElementById('shootout-panel');
-  if (old) old.remove();
-
-  const oppName = ACTIVE_MATCH ? ACTIVE_MATCH.opponent.name : 'Opponent';
-  const maxKicks = Math.max(5, state.round);
-
-  // Build kick dots
-  function dotsFor(kicks, total) {
-    let html = '';
-    for (let i = 0; i < total; i++) {
-      if (i < kicks.length) {
-        html += kicks[i] === 'goal' ? '<span style="font-size:1.1rem;margin:0 2px;">⚽</span>' : '<span style="font-size:1.1rem;margin:0 2px;">🧤</span>';
-      } else {
-        html += '<span style="font-size:1.1rem;margin:0 2px;opacity:0.3;">○</span>';
-      }
-    }
-    return html;
-  }
-
-  let actionHTML = '';
-  if (state.phase === 'user') {
-    actionHTML = `
-      <div style="font-size:0.85rem;font-weight:700;color:var(--blue);margin-bottom:10px;text-transform:uppercase;letter-spacing:0.1em;">Your Turn to Shoot</div>
-      <div style="display:flex;gap:8px;flex-wrap:wrap;">
-        <button class="btn-choice" onclick="userTakesPenalty('left', window._shootoutState)" style="flex:1;min-width:90px;padding:10px 12px;">
-          <span class="btn-choice-title">Left Corner</span>
-        </button>
-        <button class="btn-choice" onclick="userTakesPenalty('middle', window._shootoutState)" style="flex:1;min-width:90px;padding:10px 12px;">
-          <span class="btn-choice-title">Down the Middle</span>
-        </button>
-        <button class="btn-choice" onclick="userTakesPenalty('right', window._shootoutState)" style="flex:1;min-width:90px;padding:10px 12px;">
-          <span class="btn-choice-title">Right Corner</span>
-        </button>
-      </div>`;
-  } else {
-    actionHTML = `
-      <div style="font-size:0.85rem;font-weight:700;color:var(--loss-color);margin-bottom:10px;text-transform:uppercase;letter-spacing:0.1em;">You are the Goalkeeper</div>
-      <div style="display:flex;gap:8px;flex-wrap:wrap;">
-        <button class="btn-choice" onclick="oppTakesPenalty('left', window._shootoutState)" style="flex:1;min-width:90px;padding:10px 12px;">
-          <span class="btn-choice-title">Dive Left</span>
-        </button>
-        <button class="btn-choice" onclick="oppTakesPenalty('middle', window._shootoutState)" style="flex:1;min-width:90px;padding:10px 12px;">
-          <span class="btn-choice-title">Stay Middle</span>
-        </button>
-        <button class="btn-choice" onclick="oppTakesPenalty('right', window._shootoutState)" style="flex:1;min-width:90px;padding:10px 12px;">
-          <span class="btn-choice-title">Dive Right</span>
-        </button>
-      </div>`;
-  }
-
-  const panel = document.createElement('div');
-  panel.id = 'shootout-panel';
-  panel.className = 'tactical-moment';
-  panel.style.borderColor = 'var(--blue)';
-  panel.innerHTML = `
-    <div class="tactical-moment-header">
-      <span class="tactical-moment-badge">Penalty Shootout</span>
-      <span style="font-size:0.72rem;color:var(--text-muted);margin-left:auto">Kick ${Math.max(state.userKicks.length, state.oppKicks.length) + 1}${state.round > 5 ? ' (Sudden Death)' : ' of 5'}</span>
-    </div>
-    <div style="background:var(--blue-light);border-radius:var(--radius-sm);padding:12px 16px;margin-bottom:14px;">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
-        <div style="font-size:0.8rem;font-weight:700;color:var(--text-dark);">Your XI</div>
-        <div style="font-family:'Bebas Neue',sans-serif;font-size:2rem;color:var(--text-dark);letter-spacing:2px;">${state.userScore} – ${state.oppScore}</div>
-        <div style="font-size:0.8rem;font-weight:700;color:var(--text-dark);text-align:right;">${oppName}</div>
-      </div>
-      <div style="display:flex;justify-content:space-between;">
-        <div>${dotsFor(state.userKicks, maxKicks)}</div>
-        <div>${dotsFor(state.oppKicks, maxKicks)}</div>
-      </div>
-    </div>
-    <div id="shootout-action">${actionHTML}</div>
-    <div id="shootout-outcome" style="display:none;margin-top:10px;padding:10px 14px;border-radius:var(--radius-sm);font-size:0.85rem;font-weight:600;text-align:center;"></div>
-  `;
-  content.appendChild(panel);
-  window._shootoutState = state;
-}
-
-function userTakesPenalty(direction, state) {
-  // Disable buttons
-  const panel = document.getElementById('shootout-panel');
-  if (panel) panel.querySelectorAll('.btn-choice').forEach(b => b.disabled = true);
-
-  const r = Math.random();
-  const keeperGuess = r < 0.4 ? 'left' : r < 0.8 ? 'right' : 'middle';
-  const scored = keeperGuess !== direction;
-  state.userKicks.push(scored ? 'goal' : 'saved');
-  if (scored) state.userScore++;
-
-  const outcomeText = scored
-    ? `You shot ${direction}. The keeper dived ${keeperGuess}. ⚽ GOAL! ${state.userScore}–${state.oppScore}`
-    : `You shot ${direction}. The keeper guessed correctly — ${direction}! 🧤 SAVED! ${state.userScore}–${state.oppScore}`;
-
-  showShootoutOutcome(outcomeText, scored ? 'good' : 'bad', () => {
-    state.phase = 'opp';
-    advanceShootout(state);
-  });
-}
-
-function oppTakesPenalty(keeperChoice, state) {
-  // Disable buttons
-  const panel = document.getElementById('shootout-panel');
-  if (panel) panel.querySelectorAll('.btn-choice').forEach(b => b.disabled = true);
-
-  const r = Math.random();
-  const shotDir = r < 0.4 ? 'left' : r < 0.8 ? 'right' : 'middle';
-  const saved = keeperChoice === shotDir;
-  state.oppKicks.push(saved ? 'saved' : 'goal');
-  if (!saved) state.oppScore++;
-
-  const outcomeText = saved
-    ? `You dived ${keeperChoice}. They shot ${shotDir}. 🧤 GREAT SAVE! ${state.userScore}–${state.oppScore}`
-    : `You dived ${keeperChoice}. They shot ${shotDir}. ⚽ GOAL! ${state.userScore}–${state.oppScore}`;
-
-  showShootoutOutcome(outcomeText, saved ? 'good' : 'bad', () => {
-    state.phase = 'user';
-    state.round++;
-    advanceShootout(state);
-  });
-}
-
-function showShootoutOutcome(text, type, cb) {
-  const outcomeEl = document.getElementById('shootout-outcome');
-  const actionEl = document.getElementById('shootout-action');
-  if (actionEl) actionEl.style.display = 'none';
-  if (outcomeEl) {
-    outcomeEl.style.display = 'block';
-    outcomeEl.className = 'choice-result ' + (type || 'neutral');
-    outcomeEl.textContent = text;
-  }
-  setTimeout(cb, 1800);
-}
-
-function advanceShootout(state) {
-  const maxRounds = state.round > 5 ? state.round : 5;
-  const userKicksDone = state.userKicks.length;
-  const oppKicksDone = state.oppKicks.length;
-
-  // After both teams have taken 5 kicks
-  if (userKicksDone >= 5 && oppKicksDone >= 5) {
-    if (state.userScore !== state.oppScore) {
-      finishShootout(state);
-      return;
-    }
-    // Sudden death continues (state.round already incremented)
-  }
-
-  // Early finish checks
-  const userRemaining = maxRounds - userKicksDone;
-  const oppRemaining = maxRounds - oppKicksDone;
-  if (state.userScore > state.oppScore + oppRemaining) {
-    finishShootout(state); return;
-  }
-  if (state.oppScore > state.userScore + userRemaining) {
-    finishShootout(state); return;
-  }
-
-  // In sudden death: after both kick in a round, check for difference
-  if (state.round > 5 && userKicksDone === oppKicksDone && userKicksDone === state.round - 1) {
-    // Both just completed a sudden death round
-    if (state.userScore !== state.oppScore) {
-      finishShootout(state); return;
-    }
-  }
-
-  renderShootoutPanel(state);
-}
-
-function finishShootout(state) {
-  const won = state.userScore > state.oppScore;
-  const msg = won
-    ? `🏆 YOU WIN ON PENALTIES! ${state.userScore}–${state.oppScore}`
-    : `💔 Penalties lost. ${state.userScore}–${state.oppScore}`;
-
-  const panel = document.getElementById('shootout-panel');
-  if (panel) {
-    const outcomeEl = panel.querySelector('#shootout-outcome');
-    const actionEl = panel.querySelector('#shootout-action');
-    if (actionEl) actionEl.style.display = 'none';
-    if (outcomeEl) {
-      outcomeEl.style.display = 'block';
-      outcomeEl.className = 'choice-result ' + (won ? 'good' : 'bad');
-      outcomeEl.textContent = msg;
-      outcomeEl.style.fontSize = '1.05rem';
-    }
-  }
-
-  setTimeout(() => state.onComplete(won), 2000);
 }
 
 function finishMatch() {
