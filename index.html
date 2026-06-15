@@ -499,25 +499,54 @@ h1, h2, h3 { font-family: 'Bebas Neue', sans-serif; letter-spacing: 0.04em; colo
 .pitch-slot-filled .pitch-slot-rating { display: block; }
 /* Cards panel */
 .draft-cards-panel {
-  padding: 24px 20px;
+  padding: 20px 18px;
   display: flex; flex-direction: column;
-  gap: 16px;
+  gap: 14px;
   background: #0d1428;
   overflow-y: auto;
   max-height: 100vh;
 }
+.draft-roll-header { display: flex; flex-direction: column; gap: 6px; flex-shrink: 0; }
+.draft-roll-title-row { display: flex; align-items: center; justify-content: space-between; }
 .draft-cards-header {
   display: flex; flex-direction: column; gap: 6px;
 }
 .draft-pos-title {
   font-family: 'Bebas Neue', sans-serif;
-  font-size: clamp(1.6rem, 3vw, 2.2rem);
+  font-size: clamp(1.4rem, 2.5vw, 2rem);
   color: #ffffff;
   letter-spacing: 0.06em;
 }
 .draft-pos-subtitle {
-  font-size: 0.78rem; color: rgba(255,255,255,0.45);
+  font-size: 0.75rem; color: rgba(255,255,255,0.45);
   text-transform: uppercase; letter-spacing: 0.1em;
+}
+.reroll-badge {
+  font-size: 0.72rem; font-weight: 700; letter-spacing: 0.05em;
+  padding: 5px 10px; border-radius: 20px;
+  background: rgba(240,180,50,0.12); border: 1px solid rgba(240,180,50,0.35);
+  color: rgba(240,180,50,0.9); white-space: nowrap; flex-shrink: 0;
+}
+.draft-roll-actions { display: flex; gap: 10px; flex-shrink: 0; }
+.btn-roll {
+  flex: 1; padding: 14px 20px;
+  background: linear-gradient(135deg, #c8a800, #f5d84a);
+  color: #0d1428; font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.4rem; letter-spacing: 0.08em;
+  border: none; border-radius: 10px; cursor: pointer;
+  transition: transform 0.15s, box-shadow 0.15s;
+  box-shadow: 0 4px 16px rgba(200,168,0,0.35);
+}
+.btn-roll:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(200,168,0,0.5); }
+.btn-roll:active { transform: scale(0.97); }
+.draft-rolled-team { display: flex; flex-direction: column; gap: 10px; flex: 1; min-height: 0; }
+.rolled-team-name {
+  font-family: 'Bebas Neue', sans-serif; font-size: 1.3rem;
+  color: rgba(240,180,50,0.95); letter-spacing: 0.06em; flex-shrink: 0;
+}
+.rolled-team-hint {
+  font-size: 0.72rem; color: rgba(255,255,255,0.4);
+  text-transform: uppercase; letter-spacing: 0.08em; flex-shrink: 0;
 }
 .draft-instruction {
   display: flex; align-items: center; gap: 8px;
@@ -530,7 +559,22 @@ h1, h2, h3 { font-family: 'Bebas Neue', sans-serif; letter-spacing: 0.04em; colo
 .cards-grid {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
+  gap: 8px;
+  overflow-y: auto;
+  flex: 1;
+}
+.reroll-action-row { flex-shrink: 0; padding-top: 4px; }
+.btn-reroll {
+  width: 100%; padding: 10px;
+  background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.15);
+  color: rgba(255,255,255,0.7); font-size: 0.82rem; font-weight: 600;
+  border-radius: 8px; cursor: pointer; transition: background 0.15s;
+}
+.btn-reroll:hover { background: rgba(255,255,255,0.1); }
+.btn-reroll:disabled { opacity: 0.35; cursor: not-allowed; }
+.player-card.ineligible {
+  opacity: 0.32; pointer-events: none;
+  filter: grayscale(0.6);
 }
 /* PLAYER CARD */
 .player-card {
@@ -541,7 +585,7 @@ h1, h2, h3 { font-family: 'Bebas Neue', sans-serif; letter-spacing: 0.04em; colo
   display: flex; flex-direction: column;
   gap: 10px;
   position: relative; overflow: hidden;
-  width: calc(50% - 6px); min-height: 170px;
+  width: calc(50% - 5px); min-height: 130px;
   text-align: left;
   animation: cardIn 0.3s ease backwards;
 }
@@ -573,7 +617,7 @@ h1, h2, h3 { font-family: 'Bebas Neue', sans-serif; letter-spacing: 0.04em; colo
 .card-rating-block { display: flex; flex-direction: column; }
 .card-rating {
   font-family: 'Bebas Neue', sans-serif;
-  font-size: 3rem; font-weight: 400; line-height: 1;
+  font-size: 2.4rem; font-weight: 400; line-height: 1;
   color: #1a1a2e;
 }
 .card-rating-label {
@@ -715,6 +759,7 @@ h1, h2, h3 { font-family: 'Bebas Neue', sans-serif; letter-spacing: 0.04em; colo
   align-items: center;
   padding: 0;
   overflow-y: auto;
+  height: 100vh;
   background: var(--blue-light);
 }
 .tournament-header {
@@ -1403,11 +1448,21 @@ h1, h2, h3 { font-family: 'Bebas Neue', sans-serif; letter-spacing: 0.04em; colo
 
 /* ── Match Question Panel ── */
 .match-question-panel {
-  background: var(--bg-card);
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  padding: 20px;
-  margin-top: 16px;
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  background: var(--white);
+  border-top: 2px solid var(--border);
+  border-radius: 16px 16px 0 0;
+  padding: 20px 20px 24px;
+  max-height: 60vh;
+  overflow-y: auto;
+  z-index: 200;
+  box-shadow: 0 -8px 32px rgba(0,20,80,0.18);
+  animation: panelUp 0.25s ease forwards;
+}
+@keyframes panelUp {
+  from { transform: translateY(100%); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
 }
 .mq-header {
   display: flex;
@@ -1609,17 +1664,25 @@ h1, h2, h3 { font-family: 'Bebas Neue', sans-serif; letter-spacing: 0.04em; colo
         </div>
       </div>
     </div>
-    <!-- Right: cards -->
+    <!-- Right: dice roll panel -->
     <div class="draft-cards-panel">
-      <div class="draft-cards-header">
-        <h2 class="draft-pos-title" id="draft-pos-title">Select a position</h2>
-        <div class="draft-pos-subtitle" id="draft-pos-subtitle">Click a position on the pitch to begin drafting</div>
+      <div class="draft-roll-header">
+        <div class="draft-roll-title-row">
+          <h2 class="draft-pos-title" id="draft-pos-title">Roll the Dice</h2>
+          <div class="reroll-badge" id="reroll-badge">🎲 <span id="reroll-count">3</span> re-rolls</div>
+        </div>
+        <div class="draft-pos-subtitle" id="draft-pos-subtitle">Roll to get a random team — pick 1 player that fits your squad</div>
       </div>
-      <div class="draft-instruction" id="draft-instruction">
-        ⚡ Click any empty position on the pitch to see your options
+      <div class="draft-roll-actions" id="draft-roll-actions">
+        <button class="btn-roll" id="btn-roll-dice" onclick="rollDice()">🎲 Roll the Dice</button>
       </div>
-      <div class="cards-grid" id="cards-grid">
-        <!-- cards injected by JS -->
+      <div class="draft-rolled-team" id="draft-rolled-team" style="display:none">
+        <div class="rolled-team-name" id="rolled-team-name"></div>
+        <div class="rolled-team-hint" id="rolled-team-hint"></div>
+        <div class="cards-grid" id="cards-grid"></div>
+        <div class="reroll-action-row">
+          <button class="btn-reroll" id="btn-reroll" onclick="rerollDice()">🎲 Re-roll (<span id="reroll-count2">3</span> left)</button>
+        </div>
       </div>
     </div>
   </div>
@@ -1732,6 +1795,8 @@ const STATE = {
   draftPhase: 'xi',    // 'xi' | 'bench'
   teamRatings: {},
   activeDraftSlot: null,
+  rerolls: 3,          // free re-rolls remaining
+  currentRoll: null,   // current rolled team players
   tournament: {
     phase: 'league',   // 'league' | 'r16' | 'qf' | 'sf' | 'final'
     matchIndex: 0,
@@ -1902,13 +1967,156 @@ function startDraft(formationKey) {
   STATE.benchDraftIndex = 0;
   STATE.draftPhase = 'xi';
   STATE.activeDraftSlot = null;
+  STATE.rerolls = 3;
+  STATE.currentRoll = null;
   renderDraftPitch();
   showScreen('draft');
-  document.getElementById('draft-pos-title').textContent = 'Select a position';
-  document.getElementById('draft-pos-subtitle').textContent = 'Click a position on the pitch to begin drafting';
-  document.getElementById('cards-grid').innerHTML = '';
-  document.getElementById('draft-instruction').style.display = 'flex';
+  resetDiceUI();
   updateDraftProgress();
+}
+
+function resetDiceUI() {
+  document.getElementById('draft-pos-title').textContent = 'Roll the Dice';
+  document.getElementById('draft-pos-subtitle').textContent = 'Roll to get a random team — pick 1 player that fits your squad';
+  document.getElementById('draft-rolled-team').style.display = 'none';
+  document.getElementById('draft-roll-actions').style.display = 'flex';
+  document.getElementById('reroll-count').textContent = STATE.rerolls;
+  document.getElementById('reroll-count2').textContent = STATE.rerolls;
+  document.getElementById('btn-reroll').disabled = STATE.rerolls <= 0;
+}
+
+// Build a grouped lookup: team+season → players[]
+function getTeamGroups() {
+  if (!STATE._teamGroups) {
+    const g = {};
+    PLAYERS.forEach(p => {
+      const k = p.team + '|' + p.season;
+      if (!g[k]) g[k] = { teamName: p.team + ' ' + p.season, players: [] };
+      g[k].players.push(p);
+    });
+    STATE._teamGroups = Object.values(g);
+  }
+  return STATE._teamGroups;
+}
+
+function rollDice() {
+  const teams = getTeamGroups();
+  const team = teams[Math.floor(Math.random() * teams.length)];
+  STATE.currentRoll = team;
+  showRolledTeam(team);
+}
+
+function rerollDice() {
+  if (STATE.rerolls <= 0) return;
+  STATE.rerolls--;
+  document.getElementById('reroll-count').textContent = STATE.rerolls;
+  document.getElementById('reroll-count2').textContent = STATE.rerolls;
+  document.getElementById('btn-reroll').disabled = STATE.rerolls <= 0;
+  rollDice();
+}
+
+function showRolledTeam(team) {
+  // Figure out which posTypes still need filling
+  const emptySlots = STATE.slots.filter(s => !STATE.squad[s.key]);
+  const emptyPosTypes = new Set(emptySlots.map(s => s.posType));
+
+  document.getElementById('draft-roll-actions').style.display = 'none';
+  const rolledDiv = document.getElementById('draft-rolled-team');
+  rolledDiv.style.display = 'flex';
+  document.getElementById('rolled-team-name').textContent = '⚽ ' + team.teamName;
+
+  const eligibleCount = team.players.filter(p => !STATE.draftedIds.has(p.id) && playerFitsAnyEmptySlot(p, emptyPosTypes)).length;
+  document.getElementById('rolled-team-hint').textContent =
+    eligibleCount > 0
+      ? `${eligibleCount} player${eligibleCount > 1 ? 's' : ''} fit your open positions — pick one`
+      : 'No players fit your remaining slots — re-roll or pick anyway';
+
+  renderRolledCards(team.players, emptyPosTypes);
+}
+
+function playerFitsAnyEmptySlot(player, emptyPosTypes) {
+  for (const posType of emptyPosTypes) {
+    if (isEligible(player, posType)) return true;
+  }
+  return false;
+}
+
+function renderRolledCards(players, emptyPosTypes) {
+  const grid = document.getElementById('cards-grid');
+  grid.innerHTML = '';
+  // Sort: eligible first, then ineligible
+  const sorted = [...players].sort((a, b) => {
+    const aOk = !STATE.draftedIds.has(a.id) && playerFitsAnyEmptySlot(a, emptyPosTypes);
+    const bOk = !STATE.draftedIds.has(b.id) && playerFitsAnyEmptySlot(b, emptyPosTypes);
+    if (aOk && !bOk) return -1;
+    if (!aOk && bOk) return 1;
+    return b.rating - a.rating;
+  });
+
+  sorted.forEach(player => {
+    const eligible = !STATE.draftedIds.has(player.id) && playerFitsAnyEmptySlot(player, emptyPosTypes);
+    const card = document.createElement('div');
+    const tierClass = player.tier === 'Legend' ? 'tier-legend' : player.tier === 'Elite' ? 'tier-elite' : player.rating >= 70 ? 'tier-starter' : 'tier-lower';
+    const tierLabel = player.tier === 'Legend' ? 'GOLD' : player.tier === 'Elite' ? 'SILVER' : player.tier === 'Starter' ? 'BRONZE' : 'IRON';
+    card.className = 'player-card ' + tierClass + (eligible ? '' : ' ineligible');
+    if (eligible) card.onclick = () => selectRolledPlayer(player, card);
+    card.innerHTML = `
+      <div class="card-top-row">
+        <div class="card-rating-block">
+          <div class="card-rating">${player.rating}</div>
+          <div class="card-rating-label">RATING</div>
+        </div>
+        <div class="card-tier-block">
+          <div class="card-tier-badge">${player.position}</div>
+          <div class="card-tier-label">${tierLabel}</div>
+        </div>
+      </div>
+      <div class="card-name">${player.name}</div>
+      <div class="card-chips">
+        <span class="card-chip">${player.team}</span>
+        <span class="card-chip">${player.season}</span>
+      </div>
+    `;
+    grid.appendChild(card);
+  });
+}
+
+function selectRolledPlayer(player, cardEl) {
+  cardEl.classList.add('selected');
+  STATE.draftedIds.add(player.id);
+
+  // Find the best fitting empty slot
+  const emptySlots = STATE.slots.filter(s => !STATE.squad[s.key]);
+  let targetSlot = null;
+  // Prefer exact position match first
+  for (const slot of emptySlots) {
+    if (isEligible(player, slot.posType)) { targetSlot = slot; break; }
+  }
+  if (!targetSlot) return; // shouldn't happen (ineligible cards are disabled)
+
+  STATE.squad[targetSlot.key] = player;
+
+  setTimeout(() => {
+    const slotEl = document.getElementById('slot-' + targetSlot.key);
+    if (slotEl) {
+      const tierSlotClass = player.tier === 'Legend' ? 'tier-legend' : player.tier === 'Elite' ? 'tier-elite' : player.tier === 'Starter' ? 'tier-starter' : 'tier-lower';
+      slotEl.className = 'pitch-slot pitch-slot-filled ' + tierSlotClass;
+      slotEl.querySelector('.pitch-slot-name').textContent = player.name.split(' ').pop();
+      slotEl.querySelector('.pitch-slot-rating').textContent = player.rating;
+      const pill = slotEl.querySelector('.pitch-slot-pill');
+      if (pill) pill.textContent = player.position;
+    }
+    updateDraftProgress();
+
+    if (Object.keys(STATE.squad).length === STATE.slots.length) {
+      completeDraft();
+    } else {
+      // Ready for next roll
+      resetDiceUI();
+      document.getElementById('draft-roll-actions').style.display = 'flex';
+      document.getElementById('draft-rolled-team').style.display = 'none';
+    }
+  }, 400);
 }
 
 function goToDraft() {
@@ -1939,33 +2147,8 @@ function renderDraftPitch(pitchId = 'draft-pitch') {
 }
 
 function openSlotDraft(slotKey) {
-  if (STATE.squad[slotKey]) return; // already filled
-  const slot = STATE.slots.find(s => s.key === slotKey);
-  if (!slot) return;
-
-  // deactivate previous
-  if (STATE.activeDraftSlot) {
-    const prev = document.getElementById('slot-' + STATE.activeDraftSlot);
-    if (prev && !STATE.squad[STATE.activeDraftSlot]) {
-      prev.className = 'pitch-slot pitch-slot-empty';
-    }
-  }
-  STATE.activeDraftSlot = slotKey;
-  const el = document.getElementById('slot-' + slotKey);
-  if (el) el.className = 'pitch-slot pitch-slot-active';
-
-  // update header
-  const posNames = {
-    GK: 'Goalkeeper', CB: 'Centre Back', DEF: 'Full Back',
-    CDM: 'Defensive Mid', MID: 'Central Mid', CAM: 'Attacking Mid',
-    ATT: 'Wide Forward', WB: 'Wing Back', ST: 'Striker'
-  };
-  document.getElementById('draft-pos-title').textContent = posNames[slot.posType] || slot.posType;
-  document.getElementById('draft-pos-subtitle').textContent = `Choose 1 player for the ${slot.label} position`;
-  document.getElementById('draft-instruction').style.display = 'none';
-
-  const cards = getCardsForPosition(slot.posType, STATE.draftedIds);
-  renderDraftCards(cards, slotKey);
+  // Slots are now informational only — draft happens via dice roll
+  // Clicking a filled slot does nothing; clicking an empty one is also no-op
 }
 
 function getCardsForPosition(posType, excludeIds) {
@@ -2021,11 +2204,12 @@ function isEligible(player, posType) {
   return pPositions.some(pos => allowed.includes(pos));
 }
 
+// Legacy renderDraftCards — kept for bench draft
 function renderDraftCards(cards, slotKey) {
   const grid = document.getElementById('cards-grid');
   grid.innerHTML = '';
   if (cards.length === 0) {
-    grid.innerHTML = '<div style="color:var(--text-secondary);font-size:0.85rem;grid-column:1/-1;text-align:center;padding:20px;">No players available for this position.</div>';
+    grid.innerHTML = '<div style="color:rgba(255,255,255,0.4);font-size:0.85rem;grid-column:1/-1;text-align:center;padding:20px;">No players available.</div>';
     return;
   }
   cards.forEach(player => {
@@ -2056,47 +2240,17 @@ function renderDraftCards(cards, slotKey) {
 }
 
 function selectPlayer(player, slotKey, cardEl) {
+  // Used for bench picks
   cardEl.classList.add('selected');
   STATE.draftedIds.add(player.id);
-
-  if (slotKey === '__bench__') {
-    // Bench pick
-    STATE.bench.push(player);
-    setTimeout(() => {
-      STATE.benchDraftIndex++;
-      document.getElementById('cards-grid').innerHTML = '';
-      updateBenchDisplay();
-      if (STATE.benchDraftIndex >= 6) {
-        completeBenchDraft();
-      } else {
-        startBenchDraft();
-      }
-    }, 400);
-    return;
-  }
-
-  // Starting XI pick
-  STATE.squad[slotKey] = player;
+  STATE.bench.push(player);
   setTimeout(() => {
-    const slotEl = document.getElementById('slot-' + slotKey);
-    if (slotEl) {
-      const tierSlotClass = player.tier === 'Legend' ? 'tier-legend' : player.tier === 'Elite' ? 'tier-elite' : player.tier === 'Starter' ? 'tier-starter' : 'tier-lower';
-      slotEl.className = 'pitch-slot pitch-slot-filled ' + tierSlotClass;
-      const shortName = player.name.split(' ').pop();
-      slotEl.querySelector('.pitch-slot-name').textContent = shortName;
-      slotEl.querySelector('.pitch-slot-rating').textContent = player.rating;
-      const pill = slotEl.querySelector('.pitch-slot-pill');
-      if (pill) pill.textContent = player.position;
-    }
-    STATE.activeDraftSlot = null;
-    updateDraftProgress();
-    document.getElementById('cards-grid').innerHTML = '';
-    document.getElementById('draft-instruction').style.display = 'flex';
-    document.getElementById('draft-pos-title').textContent = 'Select next position';
-    document.getElementById('draft-pos-subtitle').textContent = 'Click an empty slot on the pitch';
-
-    if (Object.keys(STATE.squad).length === STATE.slots.length) {
-      completeDraft();
+    STATE.benchDraftIndex++;
+    updateBenchDisplay();
+    if (STATE.benchDraftIndex >= 4) {
+      completeBenchDraft();
+    } else {
+      startBenchDraft();
     }
   }, 400);
 }
@@ -2138,24 +2292,65 @@ function completeDraft() {
 }
 
 function startBenchDraft() {
+  STATE.rerolls = 3;
   document.getElementById('draft-pos-title').textContent = 'Pick Your Bench';
-  document.getElementById('draft-pos-subtitle').textContent = `Sub ${STATE.benchDraftIndex + 1} of 6 — pick any player`;
-  document.getElementById('draft-instruction').style.display = 'none';
-  document.getElementById('draft-progress').textContent = `SUB ${STATE.benchDraftIndex + 1} / 6`;
-  // deactivate pitch slots
-  document.querySelectorAll('.pitch-slot-active').forEach(el => {
-    el.className = 'pitch-slot pitch-slot-empty';
+  document.getElementById('draft-pos-subtitle').textContent = `Sub ${STATE.benchDraftIndex + 1} of 4 — roll for a random team`;
+  document.getElementById('draft-progress').textContent = `SUB ${STATE.benchDraftIndex + 1} / 4`;
+  document.getElementById('reroll-count').textContent = STATE.rerolls;
+  document.getElementById('reroll-count2').textContent = STATE.rerolls;
+  document.getElementById('btn-reroll').disabled = false;
+  document.getElementById('draft-rolled-team').style.display = 'none';
+  document.getElementById('draft-roll-actions').style.display = 'flex';
+  document.getElementById('btn-roll-dice').onclick = () => rollBench();
+  document.getElementById('btn-reroll').onclick = () => rerollBench();
+}
+
+function rollBench() {
+  const teams = getTeamGroups();
+  const team = teams[Math.floor(Math.random() * teams.length)];
+  showBenchTeam(team);
+}
+
+function rerollBench() {
+  if (STATE.rerolls <= 0) return;
+  STATE.rerolls--;
+  document.getElementById('reroll-count').textContent = STATE.rerolls;
+  document.getElementById('reroll-count2').textContent = STATE.rerolls;
+  document.getElementById('btn-reroll').disabled = STATE.rerolls <= 0;
+  rollBench();
+}
+
+function showBenchTeam(team) {
+  document.getElementById('draft-roll-actions').style.display = 'none';
+  const rolledDiv = document.getElementById('draft-rolled-team');
+  rolledDiv.style.display = 'flex';
+  document.getElementById('rolled-team-name').textContent = '⚽ ' + team.teamName;
+  document.getElementById('rolled-team-hint').textContent = 'Pick any player for your bench — all positions allowed';
+  const pool = team.players.filter(p => !STATE.draftedIds.has(p.id));
+  const cards = stratifiedSample(pool.length ? pool : team.players, Math.min(pool.length, 8));
+  const grid = document.getElementById('cards-grid');
+  grid.innerHTML = '';
+  cards.forEach(player => {
+    const card = document.createElement('div');
+    const tierClass = player.tier === 'Legend' ? 'tier-legend' : player.tier === 'Elite' ? 'tier-elite' : player.rating >= 70 ? 'tier-starter' : 'tier-lower';
+    const tierLabel = player.tier === 'Legend' ? 'GOLD' : player.tier === 'Elite' ? 'SILVER' : player.tier === 'Starter' ? 'BRONZE' : 'IRON';
+    card.className = 'player-card ' + tierClass;
+    card.onclick = () => selectPlayer(player, '__bench__', card);
+    card.innerHTML = `
+      <div class="card-top-row">
+        <div class="card-rating-block"><div class="card-rating">${player.rating}</div><div class="card-rating-label">RATING</div></div>
+        <div class="card-tier-block"><div class="card-tier-badge">${player.position}</div><div class="card-tier-label">${tierLabel}</div></div>
+      </div>
+      <div class="card-name">${player.name}</div>
+      <div class="card-chips"><span class="card-chip">${player.team}</span><span class="card-chip">${player.season}</span></div>
+    `;
+    grid.appendChild(card);
   });
-  renderBenchCards();
 }
 
 function renderBenchCards() {
-  // Show 6 random cards of any position for bench
-  const allPositions = ['GK','CB','LB','RB','CDM','CM','CAM','LW','RW','ST'];
-  // Pick a random posType to sample from, weighted toward field players
   const pool = PLAYERS.filter(p => !STATE.draftedIds.has(p.id));
-  const cards = stratifiedSample(pool, 6);
-  renderDraftCards(cards, '__bench__');
+  renderDraftCards(stratifiedSample(pool, 6), '__bench__');
 }
 
 function completeBenchDraft() {
