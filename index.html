@@ -298,28 +298,28 @@ h1, h2, h3 { font-family: 'Bebas Neue', sans-serif; letter-spacing: 0.04em; colo
    3. DRAFT SCREEN
 ═══════════════════════════════════════════ */
 #screen-draft {
-  flex-direction: column;
+  flex-direction: row;
   min-height: 100vh;
-  overflow-y: auto;
-  background: var(--blue-light);
+  overflow: hidden;
+  background: #080e1f;
 }
 .draft-layout {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
   min-height: 100vh;
   flex: 1;
-  padding: 20px 20px 40px;
-  gap: 20px;
+  gap: 0;
+}
+@media (max-width: 768px) {
+  .draft-layout { grid-template-columns: 1fr; overflow-y: auto; }
+  #screen-draft { overflow-y: auto; }
 }
 .draft-pitch-panel {
-  background: var(--white);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
+  background: #080e1f;
+  border-right: 1px solid rgba(255,255,255,0.08);
   display: flex; flex-direction: column;
-  padding: 16px 20px;
-  width: 100%;
-  max-width: 500px;
+  padding: 20px;
+  overflow: hidden;
 }
 .draft-panel-header {
   display: flex; align-items: center; justify-content: space-between;
@@ -327,14 +327,14 @@ h1, h2, h3 { font-family: 'Bebas Neue', sans-serif; letter-spacing: 0.04em; colo
   flex-shrink: 0;
 }
 .draft-panel-title {
-  font-size: 0.85rem; font-weight: 600;
-  letter-spacing: 0.1em; text-transform: uppercase;
-  color: var(--text-muted);
+  font-size: 0.75rem; font-weight: 600;
+  letter-spacing: 0.12em; text-transform: uppercase;
+  color: rgba(255,255,255,0.45);
 }
 .draft-progress {
   font-family: 'Bebas Neue', sans-serif;
   font-size: 1.1rem; font-weight: 400;
-  color: var(--yellow-dark);
+  color: rgba(240,180,50,0.9);
 }
 /* PITCH */
 .pitch-container {
@@ -347,31 +347,31 @@ h1, h2, h3 { font-family: 'Bebas Neue', sans-serif; letter-spacing: 0.04em; colo
   width: 100%;
   padding-bottom: 142%;
   position: relative;
-  border-radius: var(--radius-md);
+  border-radius: 10px;
   overflow: hidden;
   background:
     repeating-linear-gradient(
       0deg,
-      transparent, transparent 28px,
-      rgba(255,255,255,0.018) 28px, rgba(255,255,255,0.018) 56px
+      transparent, transparent 30px,
+      rgba(0,0,0,0.12) 30px, rgba(0,0,0,0.12) 60px
     ),
-    linear-gradient(180deg, #0f2d1a 0%, #0d2818 100%);
-  border: 1px solid rgba(255,255,255,0.08);
-  box-shadow: inset 0 0 60px rgba(0,0,0,0.3);
+    linear-gradient(180deg, #1a6b38 0%, #155a2f 50%, #1a6b38 100%);
+  border: 2px solid rgba(255,255,255,0.12);
+  box-shadow: 0 8px 40px rgba(0,0,0,0.7), inset 0 0 80px rgba(0,0,0,0.2);
 }
 .pitch-markings {
   position: absolute; inset: 0; pointer-events: none;
 }
 .pitch-marking-line {
   position: absolute;
-  background: rgba(255,255,255,0.1);
+  background: rgba(255,255,255,0.4);
 }
 .pitch-halfway {
-  top: 50%; left: 5%; right: 5%; height: 1px;
+  top: 50%; left: 4%; right: 4%; height: 1px;
 }
 .pitch-circle {
   position: absolute;
-  border: 1px solid rgba(255,255,255,0.1);
+  border: 1px solid rgba(255,255,255,0.4);
   border-radius: 50%;
   top: 50%; left: 50%;
   width: 22%; padding-bottom: 16%;
@@ -379,35 +379,35 @@ h1, h2, h3 { font-family: 'Bebas Neue', sans-serif; letter-spacing: 0.04em; colo
 }
 .pitch-penalty-top {
   position: absolute;
-  top: 4%; left: 25%; right: 25%; height: 14%;
-  border: 1px solid rgba(255,255,255,0.1);
+  top: 3%; left: 22%; right: 22%; height: 16%;
+  border: 1px solid rgba(255,255,255,0.4);
   border-top: none;
 }
 .pitch-penalty-bottom {
   position: absolute;
-  bottom: 4%; left: 25%; right: 25%; height: 14%;
-  border: 1px solid rgba(255,255,255,0.1);
+  bottom: 3%; left: 22%; right: 22%; height: 16%;
+  border: 1px solid rgba(255,255,255,0.4);
   border-bottom: none;
 }
 .pitch-goal-top {
   position: absolute;
-  top: 3.5%; left: 38%; right: 38%; height: 4%;
-  border: 1px solid rgba(255,255,255,0.15);
+  top: 2.5%; left: 37%; right: 37%; height: 5%;
+  border: 1px solid rgba(255,255,255,0.5);
   border-top: none;
-  background: rgba(255,255,255,0.02);
+  background: rgba(255,255,255,0.04);
 }
 .pitch-goal-bottom {
   position: absolute;
-  bottom: 3.5%; left: 38%; right: 38%; height: 4%;
-  border: 1px solid rgba(255,255,255,0.15);
+  bottom: 2.5%; left: 37%; right: 37%; height: 5%;
+  border: 1px solid rgba(255,255,255,0.5);
   border-bottom: none;
-  background: rgba(255,255,255,0.02);
+  background: rgba(255,255,255,0.04);
 }
 /* position slots on pitch */
 .pitch-slot {
   position: absolute;
   transform: translate(-50%, -50%);
-  width: 54px; height: 54px;
+  width: 48px; height: 48px;
   border-radius: 50%;
   display: flex; flex-direction: column;
   align-items: center; justify-content: center;
@@ -417,178 +417,202 @@ h1, h2, h3 { font-family: 'Bebas Neue', sans-serif; letter-spacing: 0.04em; colo
   text-align: center;
 }
 .pitch-slot-empty {
-  background: rgba(255,255,255,0.04);
-  border: 2px dashed rgba(255,255,255,0.2);
+  background: rgba(8,14,31,0.75);
+  border: 2px dashed rgba(240,180,50,0.6);
 }
-.pitch-slot-empty:hover {
-  border-color: var(--accent-blue);
-  background: rgba(0,180,255,0.08);
-}
-.pitch-slot-active {
-  border: 2px solid var(--accent-blue);
-  background: rgba(0,180,255,0.15);
-  animation: slotPulse 1.5s ease-in-out infinite;
-}
-@keyframes slotPulse {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(0,180,255,0.5); }
-  50%       { box-shadow: 0 0 0 8px rgba(0,180,255,0); }
-}
-.pitch-slot-filled {
-  background: rgba(0,180,255,0.1);
-  border: 2px solid rgba(0,180,255,0.4);
-  cursor: default;
-}
-.pitch-slot-filled.slot-legend {
-  border-color: rgba(240,192,64,0.6);
-  background: rgba(240,192,64,0.08);
-}
-.pitch-slot-label {
-  font-size: 0.5rem; font-weight: 600;
-  letter-spacing: 0.06em; text-transform: uppercase;
-  color: var(--text-secondary);
+.pitch-slot-empty::after {
+  content: '+';
+  font-size: 1.3rem; font-weight: 300;
+  color: rgba(240,180,50,0.7);
   line-height: 1;
 }
+.pitch-slot-empty:hover {
+  border-color: rgba(240,180,50,1);
+  background: rgba(240,180,50,0.12);
+  transform: translate(-50%, -50%) scale(1.1);
+}
+.pitch-slot-active {
+  border: 2px solid rgba(240,180,50,0.9);
+  background: rgba(240,180,50,0.18);
+  animation: slotPulse 1.5s ease-in-out infinite;
+}
+.pitch-slot-active::after {
+  content: '+';
+  font-size: 1.3rem; font-weight: 300;
+  color: rgba(240,180,50,0.9);
+}
+@keyframes slotPulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(240,180,50,0.5); }
+  50%       { box-shadow: 0 0 0 10px rgba(240,180,50,0); }
+}
+.pitch-slot-filled {
+  cursor: default;
+  box-shadow: 0 3px 12px rgba(0,0,0,0.6);
+}
+.pitch-slot-filled.tier-legend  { background: #c8a800; border: 2px solid rgba(255,220,80,0.6); }
+.pitch-slot-filled.tier-elite   { background: #1a3a8f; border: 2px solid rgba(80,120,255,0.5); }
+.pitch-slot-filled.tier-starter { background: #1a5c3a; border: 2px solid rgba(80,200,120,0.4); }
+.pitch-slot-filled.tier-lower   { background: #2a3a55; border: 2px solid rgba(100,120,160,0.4); }
+.pitch-slot-label {
+  position: absolute;
+  bottom: -18px;
+  left: 50%; transform: translateX(-50%);
+  font-size: 0.58rem; font-weight: 700;
+  letter-spacing: 0.06em; text-transform: uppercase;
+  color: #fff;
+  background: rgba(8,14,31,0.85);
+  padding: 2px 6px; border-radius: 3px;
+  white-space: nowrap;
+  pointer-events: none;
+}
 .pitch-slot-filled .pitch-slot-label { display: none; }
+.pitch-slot-pill {
+  position: absolute;
+  bottom: -18px;
+  left: 50%; transform: translateX(-50%);
+  font-size: 0.58rem; font-weight: 700;
+  letter-spacing: 0.04em; text-transform: uppercase;
+  color: rgba(255,255,255,0.85);
+  background: rgba(8,14,31,0.85);
+  padding: 2px 6px; border-radius: 3px;
+  white-space: nowrap;
+  pointer-events: none;
+  display: none;
+}
+.pitch-slot-filled .pitch-slot-pill { display: block; }
 .pitch-slot-name {
   display: none;
-  font-size: 0.72rem; font-weight: 700;
+  font-size: 0.68rem; font-weight: 700;
   color: #ffffff;
-  text-shadow: 0 1px 3px rgba(0,0,0,0.8);
+  text-shadow: 0 1px 4px rgba(0,0,0,0.9);
   line-height: 1.1; text-align: center;
-  max-width: 54px; word-break: break-word;
+  max-width: 44px; word-break: break-word;
 }
 .pitch-slot-filled .pitch-slot-name { display: block; }
 .pitch-slot-rating {
   display: none;
   font-family: 'Rajdhani', sans-serif;
-  font-size: 0.7rem; font-weight: 700;
-  color: var(--accent-blue);
+  font-size: 0.65rem; font-weight: 700;
+  color: rgba(255,255,255,0.75);
   line-height: 1;
 }
 .pitch-slot-filled .pitch-slot-rating { display: block; }
-.pitch-slot-filled.slot-legend .pitch-slot-rating { color: var(--accent-gold); }
 /* Cards panel */
 .draft-cards-panel {
-  padding: 0;
+  padding: 24px 20px;
   display: flex; flex-direction: column;
   gap: 16px;
-  width: 100%;
-  max-width: 700px;
+  background: #0d1428;
+  overflow-y: auto;
+  max-height: 100vh;
 }
 .draft-cards-header {
   display: flex; flex-direction: column; gap: 6px;
 }
 .draft-pos-title {
-  font-size: clamp(1.4rem, 3vw, 1.9rem);
-  color: var(--text-dark);
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: clamp(1.6rem, 3vw, 2.2rem);
+  color: #ffffff;
+  letter-spacing: 0.06em;
 }
 .draft-pos-subtitle {
-  font-size: 0.85rem; color: var(--text-muted);
+  font-size: 0.78rem; color: rgba(255,255,255,0.45);
+  text-transform: uppercase; letter-spacing: 0.1em;
 }
 .draft-instruction {
   display: flex; align-items: center; gap: 8px;
   padding: 10px 14px;
-  background: var(--blue-mid);
-  border: 1px solid var(--blue-mid);
+  background: rgba(240,180,50,0.08);
+  border: 1px solid rgba(240,180,50,0.25);
   border-radius: var(--radius-sm);
-  font-size: 0.8rem; color: var(--blue);
+  font-size: 0.8rem; color: rgba(240,180,50,0.9);
 }
 .cards-grid {
   display: flex;
   flex-wrap: wrap;
-  gap: 12px;
-  justify-content: center;
+  gap: 10px;
 }
 /* PLAYER CARD */
 .player-card {
-  background: var(--white);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
-  padding: 0 0 14px;
+  border-radius: 12px;
+  padding: 14px 14px 12px;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.18s ease;
   display: flex; flex-direction: column;
-  align-items: center; gap: 6px;
+  gap: 10px;
   position: relative; overflow: hidden;
-  width: 160px; min-height: 220px;
-  text-align: center;
+  width: calc(50% - 6px); min-height: 170px;
+  text-align: left;
   animation: cardIn 0.3s ease backwards;
 }
-.player-card:nth-child(1) { animation-delay: 0.05s; }
-.player-card:nth-child(2) { animation-delay: 0.1s; }
-.player-card:nth-child(3) { animation-delay: 0.15s; }
-.player-card:nth-child(4) { animation-delay: 0.2s; }
-.player-card:nth-child(5) { animation-delay: 0.25s; }
-.player-card:nth-child(6) { animation-delay: 0.3s; }
+.player-card:nth-child(1) { animation-delay: 0.04s; }
+.player-card:nth-child(2) { animation-delay: 0.08s; }
+.player-card:nth-child(3) { animation-delay: 0.12s; }
+.player-card:nth-child(4) { animation-delay: 0.16s; }
+.player-card:nth-child(5) { animation-delay: 0.20s; }
+.player-card:nth-child(6) { animation-delay: 0.24s; }
 @keyframes cardIn {
-  from { opacity: 0; transform: translateY(16px) scale(0.96); }
-  to   { opacity: 1; transform: translateY(0) scale(1); }
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
-.player-card::before {
-  content: '';
-  position: absolute; top: 0; left: 0; right: 0; height: 36px;
-  background: var(--tier-color, var(--tier-starter));
-  opacity: 0.18;
-}
-.player-card-top-stripe {
-  width: 100%; height: 6px;
-  background: var(--tier-color, var(--tier-starter));
-  flex-shrink: 0;
-}
+/* Tier backgrounds */
+.player-card.tier-legend  { background: linear-gradient(135deg, #a07800 0%, #f5d84a 60%, #e8c430 100%); }
+.player-card.tier-elite   { background: linear-gradient(135deg, #6880b8 0%, #c0c8e0 60%, #d8dff0 100%); }
+.player-card.tier-starter { background: #ffffff; border: 1px solid #d4dcff; }
+.player-card.tier-lower   { background: #f0f2f8; border: 1px solid #d4dcff; }
 .player-card:hover {
-  transform: translateY(-4px) scale(1.02);
-  box-shadow: 0 12px 32px rgba(0,54,224,0.18);
-  border-color: var(--blue);
+  transform: translateY(-3px) scale(1.02);
+  box-shadow: 0 10px 30px rgba(0,0,0,0.3);
   z-index: 1;
 }
-.player-card.selected {
-  border-color: var(--yellow-dark);
-  border-width: 2px;
-  transform: scale(0.97);
-  box-shadow: 0 0 16px rgba(245,216,74,0.3);
+.player-card.selected { transform: scale(0.97); opacity: 0.7; }
+.player-card-top-stripe { display: none; }
+.card-top-row {
+  display: flex; justify-content: space-between; align-items: flex-start;
 }
-.card-tier-badge {
-  position: absolute; top: 10px; right: 8px;
-  font-family: 'Barlow Condensed', sans-serif;
-  font-size: 0.55rem; font-weight: 700; letter-spacing: 0.12em;
-  text-transform: uppercase;
-  padding: 2px 6px; border-radius: 10px;
-  background: var(--tier-color, var(--tier-starter));
-  color: #fff;
-  z-index: 2;
-}
+.card-rating-block { display: flex; flex-direction: column; }
 .card-rating {
   font-family: 'Bebas Neue', sans-serif;
-  font-size: 3.5rem; font-weight: 400; line-height: 1;
-  color: var(--tier-color, var(--tier-starter));
-  margin-top: 10px;
+  font-size: 3rem; font-weight: 400; line-height: 1;
+  color: #1a1a2e;
 }
-.card-pos-badge {
-  display: inline-block;
+.card-rating-label {
+  font-size: 0.55rem; font-weight: 700; letter-spacing: 0.12em;
+  text-transform: uppercase; color: rgba(30,30,60,0.55);
+}
+.card-tier-block {
+  display: flex; flex-direction: column; align-items: flex-end; gap: 2px;
+}
+.card-tier-badge {
   font-family: 'Barlow Condensed', sans-serif;
-  font-size: 0.75rem; font-weight: 700; letter-spacing: 0.1em;
+  font-size: 0.75rem; font-weight: 700; letter-spacing: 0.08em;
   text-transform: uppercase;
-  padding: 4px 12px; border-radius: 12px;
-  color: #fff;
-  margin-bottom: 4px;
+  padding: 4px 9px; border-radius: 8px;
+  background: rgba(30,30,60,0.18); color: #1a1a2e;
+  min-width: 36px; text-align: center;
 }
-.card-pos-badge.pos-gk   { background: #16a34a; }
-.card-pos-badge.pos-def  { background: var(--blue); }
-.card-pos-badge.pos-mid  { background: #c8a800; color: #0a1a5c; }
-.card-pos-badge.pos-fwd  { background: #dc2626; }
+.card-tier-label {
+  font-size: 0.52rem; font-weight: 700; letter-spacing: 0.1em;
+  text-transform: uppercase; color: rgba(30,30,60,0.45);
+}
+.card-pos-badge { display: none; }
 .card-name {
   font-family: 'Barlow Condensed', sans-serif;
-  font-weight: 700; font-size: 1.15rem;
-  color: var(--text-dark); line-height: 1.2;
-  padding: 0 10px;
+  font-weight: 700; font-size: 1.2rem;
+  color: #0d1428; line-height: 1.2;
   white-space: normal; word-break: break-word;
 }
-.card-team {
-  font-size: 0.82rem; color: var(--text-dark);
-  margin-top: auto; padding: 0 10px;
-  line-height: 1.4; font-weight: 600;
+.tier-legend .card-name, .tier-elite .card-name { color: #0d1428; }
+.card-chips {
+  display: flex; gap: 6px; flex-wrap: wrap; margin-top: auto;
 }
-.card-team span { display: block; color: var(--text-muted); font-size: 0.73rem; font-weight: 400; margin-top: 1px; }
+.card-chip {
+  font-size: 0.65rem; font-weight: 600;
+  padding: 3px 8px; border-radius: 6px;
+  background: rgba(30,30,60,0.12); color: #1a1a2e;
+  white-space: nowrap;
+}
+.card-team { display: none; }
 
 /* ═══════════════════════════════════════════
    4. TEAM SUMMARY SCREEN
@@ -1286,6 +1310,97 @@ h1, h2, h3 { font-family: 'Bebas Neue', sans-serif; letter-spacing: 0.04em; colo
   .match-score-num { font-size: 2rem; }
 }
 
+/* ── Pre-Match Draw ── */
+.pre-match-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 24px;
+  display: flex; flex-direction: column; gap: 16px;
+  animation: cardIn 0.4s ease;
+}
+.pm-phase {
+  font-size: 0.7rem; font-weight: 700; letter-spacing: 0.14em;
+  text-transform: uppercase; color: var(--text-muted);
+}
+.pm-matchup {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+}
+.pm-team-block { display: flex; flex-direction: column; gap: 2px; flex: 1; }
+.pm-team-block.pm-opp { align-items: flex-end; }
+.pm-team-name { font-size: 0.82rem; font-weight: 700; color: var(--text-primary); }
+.pm-ovr { font-family: 'Bebas Neue', sans-serif; font-size: 2.6rem; line-height: 1; color: var(--accent-blue); }
+.pm-ovr-label { font-size: 0.6rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-muted); }
+.pm-vs { font-family: 'Bebas Neue', sans-serif; font-size: 1.4rem; color: var(--text-muted); flex-shrink: 0; }
+.pm-diff-label { text-align: center; font-size: 0.78rem; font-weight: 600; color: var(--text-secondary); }
+.pm-stats { display: flex; flex-direction: column; gap: 8px; }
+.pm-stat-row { display: flex; align-items: center; gap: 8px; }
+.pm-stat-val { font-family: 'Rajdhani', sans-serif; font-size: 1rem; font-weight: 700; min-width: 28px; }
+.pm-stat-val-right { text-align: right; }
+.pm-stat-bars { flex: 1; display: flex; flex-direction: column; gap: 3px; }
+.pm-stat-label { font-size: 0.62rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-muted); text-align: center; }
+.pm-bar-track { height: 5px; background: var(--border); border-radius: 3px; overflow: hidden; }
+.pm-bar-fill { height: 100%; border-radius: 3px; transition: width 0.6s ease; }
+.pm-bar-right { direction: rtl; }
+.pm-bar-fill-right { direction: ltr; }
+.pm-bio { background: var(--bg-surface); border-radius: 8px; padding: 12px 14px; }
+.pm-bio-title { font-size: 0.7rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 6px; }
+.pm-bio-text { font-size: 0.85rem; color: var(--text-secondary); line-height: 1.5; }
+.pm-key-players { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.pmk-player { font-size: 0.72rem; font-weight: 600; padding: 3px 10px; border-radius: 20px; background: var(--border); color: var(--text-primary); }
+.pm-kickoff-btn { margin-top: 4px; }
+
+/* ── Goal Banner ── */
+.goal-banner {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 9999;
+  padding: 18px 24px;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;
+  animation: bannerSlide 0.3s cubic-bezier(0.34,1.56,0.64,1);
+  text-align: center;
+}
+.goal-banner.scored  { background: linear-gradient(135deg, #16a34a, #22c55e); }
+.goal-banner.conceded { background: linear-gradient(135deg, #b91c1c, #ef4444); }
+.goal-banner.banner-out { animation: bannerSlideOut 0.4s ease forwards; }
+.gb-icon { font-size: 1.8rem; }
+.gb-text { font-family: 'Bebas Neue', sans-serif; font-size: 2.2rem; letter-spacing: 0.1em; color: #fff; line-height: 1; }
+.gb-score { font-size: 0.85rem; color: rgba(255,255,255,0.85); font-weight: 600; }
+@keyframes bannerSlide { from { transform: translateY(-100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+@keyframes bannerSlideOut { from { transform: translateY(0); opacity: 1; } to { transform: translateY(-100%); opacity: 0; } }
+
+/* ── Match Caption ── */
+.match-caption {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--accent-blue);
+  border-radius: 8px;
+  padding: 10px 16px;
+  font-size: 0.84rem; color: var(--text-secondary);
+  font-style: italic;
+  margin-top: 8px;
+  animation: captionIn 0.3s ease;
+  transition: opacity 0.4s;
+}
+.match-caption.fade-out { opacity: 0; }
+@keyframes captionIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+
+/* ── Match Question minute badge ── */
+.mq-minute {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 0.95rem; letter-spacing: 0.06em;
+  color: var(--accent-blue);
+  background: rgba(0,54,224,0.08);
+  padding: 2px 7px; border-radius: 4px;
+  margin-right: 4px;
+}
+.mq-buildup {
+  font-size: 0.82rem; color: var(--text-secondary);
+  font-style: italic; line-height: 1.5;
+  margin-bottom: 6px;
+  padding: 8px 10px;
+  background: var(--bg-surface);
+  border-radius: 6px;
+}
+
 /* ── Match Question Panel ── */
 .match-question-panel {
   background: var(--bg-card);
@@ -1817,6 +1932,7 @@ function renderDraftPitch(pitchId = 'draft-pitch') {
       <div class="pitch-slot-label">${slot.label}</div>
       <div class="pitch-slot-name"></div>
       <div class="pitch-slot-rating"></div>
+      <div class="pitch-slot-pill">${slot.label}</div>
     `;
     pitch.appendChild(el);
   });
@@ -1914,18 +2030,26 @@ function renderDraftCards(cards, slotKey) {
   }
   cards.forEach(player => {
     const card = document.createElement('div');
-    const tierColor = TIER_COLORS[player.tier] || 'var(--tier-starter)';
-    card.className = 'player-card';
-    card.style.setProperty('--tier-color', tierColor);
+    const tierClass = player.tier === 'Legend' ? 'tier-legend' : player.tier === 'Elite' ? 'tier-elite' : player.rating >= 70 ? 'tier-starter' : 'tier-lower';
+    const tierLabel = player.tier === 'Legend' ? 'GOLD' : player.tier === 'Elite' ? 'SILVER' : player.tier === 'Starter' ? 'BRONZE' : 'IRON';
+    card.className = 'player-card ' + tierClass;
     card.onclick = () => selectPlayer(player, slotKey, card);
-    const posBadgeClass = getPosClass(player.position);
     card.innerHTML = `
-      <div class="player-card-top-stripe"></div>
-      <div class="card-tier-badge">${player.tier}</div>
-      <div class="card-rating">${player.rating}</div>
-      <div class="card-pos-badge ${posBadgeClass}">${player.position}</div>
+      <div class="card-top-row">
+        <div class="card-rating-block">
+          <div class="card-rating">${player.rating}</div>
+          <div class="card-rating-label">RATING</div>
+        </div>
+        <div class="card-tier-block">
+          <div class="card-tier-badge">${player.position}</div>
+          <div class="card-tier-label">${tierLabel}</div>
+        </div>
+      </div>
       <div class="card-name">${player.name}</div>
-      <div class="card-team">${player.team}<span>${player.season}</span></div>
+      <div class="card-chips">
+        <span class="card-chip">${player.team}</span>
+        <span class="card-chip">${player.season}</span>
+      </div>
     `;
     grid.appendChild(card);
   });
@@ -1956,11 +2080,13 @@ function selectPlayer(player, slotKey, cardEl) {
   setTimeout(() => {
     const slotEl = document.getElementById('slot-' + slotKey);
     if (slotEl) {
-      slotEl.className = 'pitch-slot pitch-slot-filled' +
-        (player.tier === 'Legend' ? ' slot-legend' : '');
+      const tierSlotClass = player.tier === 'Legend' ? 'tier-legend' : player.tier === 'Elite' ? 'tier-elite' : player.tier === 'Starter' ? 'tier-starter' : 'tier-lower';
+      slotEl.className = 'pitch-slot pitch-slot-filled ' + tierSlotClass;
       const shortName = player.name.split(' ').pop();
       slotEl.querySelector('.pitch-slot-name').textContent = shortName;
       slotEl.querySelector('.pitch-slot-rating').textContent = player.rating;
+      const pill = slotEl.querySelector('.pitch-slot-pill');
+      if (pill) pill.textContent = player.position;
     }
     STATE.activeDraftSlot = null;
     updateDraftProgress();
@@ -2329,7 +2455,8 @@ function renderSummaryPitch() {
   STATE.slots.forEach(slot => {
     const player = STATE.squad[slot.key];
     const el = document.createElement('div');
-    el.className = 'pitch-slot pitch-slot-filled' + (player && player.tier === 'Legend' ? ' slot-legend' : '');
+    const tierClass = player ? (player.tier === 'Legend' ? 'tier-legend' : player.tier === 'Elite' ? 'tier-elite' : player.rating >= 70 ? 'tier-starter' : 'tier-lower') : '';
+    el.className = 'pitch-slot pitch-slot-filled' + (tierClass ? ' ' + tierClass : '');
     el.style.left = slot.left + '%';
     el.style.top = slot.top + '%';
     const shortName = player ? player.name.split(' ').pop() : slot.label;
@@ -2338,6 +2465,7 @@ function renderSummaryPitch() {
       <div class="pitch-slot-label">${slot.label}</div>
       <div class="pitch-slot-name">${shortName}</div>
       <div class="pitch-slot-rating">${rating}</div>
+      <div class="pitch-slot-pill">${slot.label}</div>
     `;
     pitch.appendChild(el);
   });
@@ -2386,110 +2514,122 @@ function updateTournamentHeader() {
 const ATTACKING_QUESTIONS = [
   {
     id: 'atk_1v1_keeper',
-    situation: 'Your striker is through 1v1 with the keeper!',
+    situation: '{striker} is through 1v1 with the keeper!',
+    buildup: '{cam} plays a perfectly weighted through ball over the top. {striker} controls on his chest, the last defender beaten, keeper charging out...',
     options: [
-      { text: 'Chip the keeper', outcome: 'Beautiful chip lofts over the keeper and into the net!', scores: true },
-      { text: 'Power shot low', outcome: 'Driven low into the corner — the keeper had no chance!', scores: true },
-      { text: 'Try to dribble round him', outcome: 'Too many touches — the keeper smothers the ball. Wasted chance.', scores: false },
+      { text: 'Chip the keeper', outcome: '{striker} chips it beautifully — lofts over the keeper and into the net!', scores: true },
+      { text: 'Power shot low', outcome: '{striker} drives it low into the corner — the keeper had no chance!', scores: true },
+      { text: 'Try to dribble round him', outcome: '{striker} tries to go round him but takes too many touches — the keeper smothers it.', scores: false },
     ]
   },
   {
     id: 'atk_freekick',
-    situation: 'Free kick 25 yards out — dangerous position!',
+    situation: 'Free kick won — 25 yards out, dangerous position!',
+    buildup: '{cm} is fouled just outside the area. {cam} steps up to take it. The wall is set. A hush falls over the crowd...',
     options: [
-      { text: 'Curl top corner', outcome: 'Dips beautifully over the wall and into the top corner!', scores: true },
-      { text: 'Drive it low', outcome: 'Thunderbolt drives under the wall and beats the keeper!', scores: true },
-      { text: 'Dummy run, tap-in attempt', outcome: 'The dummy run is spotted — defenders cover and it comes to nothing.', scores: false },
+      { text: 'Curl top corner', outcome: '{cam} curls it beautifully — dips over the wall and into the top corner!', scores: true },
+      { text: 'Drive it low', outcome: "{cam} drives a thunderbolt under the wall — the keeper dives but can't reach it!", scores: true },
+      { text: 'Dummy run, tap-in attempt', outcome: 'The dummy run is spotted. Defenders cover and the chance comes to nothing.', scores: false },
     ]
   },
   {
     id: 'atk_header',
-    situation: 'Header chance at the back post from a cross!',
+    situation: '{striker} attacks the cross at the back post!',
+    buildup: "{rw} whips in a delivery from the right. {striker} makes a late run, losing his marker at the back post. He's free...",
     options: [
-      { text: 'Powerful downward header', outcome: 'Thumping header — crashes off the ground and in!', scores: true },
-      { text: 'Glance it into the far corner', outcome: 'Glancing header redirects the cross — the keeper is helpless!', scores: true },
-      { text: 'Try to chest it down first', outcome: 'He takes too long — the cross is cleared before he can shoot.', scores: false },
+      { text: 'Powerful downward header', outcome: '{striker} thumps it downward — bounces off the turf and into the net!', scores: true },
+      { text: 'Glance it into the far corner', outcome: '{striker} glances it perfectly — the keeper has no chance at the far post!', scores: true },
+      { text: 'Try to chest it down first', outcome: '{striker} takes too long — the defender gets back and clears it.', scores: false },
     ]
   },
   {
     id: 'atk_penalty',
-    situation: 'PENALTY! Your chance to score from the spot!',
+    situation: 'PENALTY! {striker} steps up to shoot!',
+    buildup: 'The referee points to the spot! {striker} picks up the ball. The keeper dances on his line. Crowd goes silent...',
     options: [
-      { text: 'Place it in the corner', outcome: 'Coolly placed into the corner — the keeper went the wrong way!', scores: true },
-      { text: 'Power it down the middle', outcome: 'Hit with venom straight down the middle as the keeper dives — GOAL!', scores: true },
-      { text: 'Cheeky Panenka chip', outcome: 'The Panenka... keeper stays put and catches it easily. Embarrassing.', scores: false },
+      { text: 'Place it in the corner', outcome: '{striker} sends the keeper the wrong way — bottom corner, GOAL!', scores: true },
+      { text: 'Power it down the middle', outcome: '{striker} buries it down the middle as the keeper dives — GOAL!', scores: true },
+      { text: 'Cheeky Panenka chip', outcome: '{striker} tries the Panenka — keeper stays put and catches it. What a disaster.', scores: false },
     ]
   },
   {
     id: 'atk_edge_box',
-    situation: 'Your striker receives it on the edge of the box!',
+    situation: '{striker} receives the ball on the edge of the box!',
+    buildup: '{cm} plays it into feet. {striker} holds off the defender, turns and is facing goal at the edge of the area...',
     options: [
-      { text: 'First-time shot', outcome: 'First-time strike catches the keeper off guard — top corner!', scores: true },
-      { text: 'Take a touch and shoot', outcome: 'Takes a touch and curls it — goalkeeper can only watch it go in!', scores: true },
-      { text: 'Try to cut inside for a better angle', outcome: 'Too clever — he takes too long and the chance is gone.', scores: false },
+      { text: 'First-time shot', outcome: '{striker} fires first time — catches the keeper off guard, top corner!', scores: true },
+      { text: 'Take a touch and shoot', outcome: '{striker} takes one touch, creates a yard of space and curls it in!', scores: true },
+      { text: 'Try to cut inside for a better angle', outcome: '{striker} takes too long — the chance evaporates as defenders close in.', scores: false },
     ]
   },
   {
     id: 'atk_cross_unmarked',
-    situation: 'Cross into the box — your attacker is completely unmarked!',
+    situation: '{lw} crosses — {striker} is completely unmarked in the box!',
+    buildup: "{lw} gets to the byline and picks out {striker} who's ghosted away from his marker inside the area. Great movement...",
     options: [
-      { text: 'Volley it first time', outcome: 'Sweet volley — rockets into the net!', scores: true },
-      { text: 'Chest down then finish', outcome: 'Controls on the chest, swivels, and drills it in!', scores: true },
-      { text: 'Head it early', outcome: 'Gets under the ball — his header loops wide.', scores: false },
+      { text: 'Volley it first time', outcome: '{striker} volleys it sweetly — rockets into the net!', scores: true },
+      { text: 'Chest down then finish', outcome: '{striker} controls on the chest, swivels and drills it in!', scores: true },
+      { text: 'Head it early', outcome: '{striker} gets under it — the header loops wide of the post.', scores: false },
     ]
   },
   {
     id: 'atk_counter_2v1',
-    situation: 'Counter attack! 2v1 — you against the last defender!',
+    situation: 'Counter attack! {striker} and {lw} — 2v1 against the last defender!',
+    buildup: "{cam} wins the ball back in midfield and releases {striker} instantly. {lw} is overlapping — it's two against one...",
     options: [
-      { text: 'Slip the through ball', outcome: 'Perfect through ball — your striker slots it home!', scores: true },
-      { text: 'Shoot early before the defender closes', outcome: 'Pulls the trigger early — low drive into the corner!', scores: true },
-      { text: 'Try to dribble all the way through', outcome: 'Defender reads it, gets a foot in, and the chance is gone.', scores: false },
+      { text: 'Slip the through ball to {lw}', outcome: '{striker} plays {lw} in — and {lw} slots it home!', scores: true },
+      { text: '{striker} shoots early', outcome: '{striker} pulls the trigger — low drive into the far corner!', scores: true },
+      { text: 'Slow down, wait for more support', outcome: 'The defender holds on long enough for cover to arrive. Chance gone.', scores: false },
     ]
   },
   {
     id: 'atk_setpiece_corner',
     situation: 'Corner whipped in — bodies in the box!',
+    buildup: '{rw} stands over the corner. {striker} makes a run to the near post, {def} attacks the back post. The delivery comes in...',
     options: [
-      { text: 'Near post flick-on', outcome: 'Flick-on at the near post — your striker taps in at the far post!', scores: true },
-      { text: 'Back post attack', outcome: 'Powerful run to the back post — controlled finish!', scores: true },
-      { text: 'Wait at the penalty spot for a second ball', outcome: 'Keeper punches it clear and the move breaks down.', scores: false },
+      { text: '{striker} near post flick', outcome: '{striker} flicks it on at the near post — {def} taps it in at the back!', scores: true },
+      { text: '{def} attacks the back post', outcome: '{def} powers a run to the back post — controlled header, GOAL!', scores: true },
+      { text: 'Wait for a second ball', outcome: 'The keeper punches it clear and the move breaks down.', scores: false },
     ]
   },
   {
     id: 'atk_winger_cutinside',
-    situation: 'Your winger cuts inside — shot on!',
+    situation: '{lw} cuts inside — shooting position!',
+    buildup: "{lw} receives wide left, beats his man with a stepover and drives towards goal. He's on his stronger foot now...",
     options: [
-      { text: 'Curl it with the weaker foot', outcome: 'Cuts onto his weaker foot and curls it into the far corner!', scores: true },
-      { text: 'Cut back for the striker', outcome: 'Perfect cut-back — striker blasts it in!', scores: true },
-      { text: 'Keep dribbling toward goal', outcome: 'Takes one touch too many — defender gets back and blocks.', scores: false },
+      { text: 'Curl it into the far corner', outcome: '{lw} bends it beautifully into the far corner — the keeper is rooted!', scores: true },
+      { text: 'Cut back to {striker}', outcome: '{lw} rolls it back to {striker} who blasts it in first time!', scores: true },
+      { text: 'Keep dribbling into the box', outcome: '{lw} takes one touch too many — the defender gets back and blocks.', scores: false },
     ]
   },
   {
     id: 'atk_breakaway',
-    situation: 'Your forward is clean through on goal with pace!',
+    situation: '{striker} is clean through with just the keeper to beat!',
+    buildup: '{cm} plays a brilliant reverse pass that splits the defence wide open. {striker} is in behind, running full pace at goal...',
     options: [
-      { text: 'Shoot first time', outcome: 'First-time finish slides it under the keeper!', scores: true },
-      { text: 'Wait for keeper to commit', outcome: 'Waits, keeper dives early, rolls it into the empty net!', scores: true },
-      { text: 'Try an elaborate step-over', outcome: 'Gets tangled in his own feet — what a miss!', scores: false },
+      { text: 'Shoot first time', outcome: '{striker} hits it first time — slides it under the keeper!', scores: true },
+      { text: 'Wait, let the keeper commit', outcome: '{striker} waits, the keeper dives early — cool finish into the empty net!', scores: true },
+      { text: 'Try an elaborate step-over', outcome: '{striker} gets tangled in his own feet. What a miss — it goes wide.', scores: false },
     ]
   },
   {
     id: 'atk_longshot',
-    situation: 'Your midfielder has space — long-range opportunity!',
+    situation: '{cm} has space — long-range shooting opportunity!',
+    buildup: 'A quick interchange in midfield creates space. {cam} lays it off to {cm} who is 25 yards from goal with no pressure...',
     options: [
-      { text: 'Hit it with everything', outcome: 'Thunderbolt from distance — screams into the top corner!', scores: true },
-      { text: 'Side-foot for accuracy', outcome: 'Side-footed perfectly into the bottom corner!', scores: true },
-      { text: 'Look for a better option', outcome: 'Passes sideways — the chance evaporates.', scores: false },
+      { text: '{cm} hits it with everything', outcome: '{cm} unleashes a thunderbolt — screams into the top corner!', scores: true },
+      { text: '{cm} side-foots for accuracy', outcome: '{cm} places it perfectly into the bottom corner — goalkeeper beaten!', scores: true },
+      { text: 'Look for a better option', outcome: '{cm} hesitates and passes sideways — the chance evaporates.', scores: false },
     ]
   },
   {
     id: 'atk_rebound',
-    situation: 'The keeper parries — first to the rebound!',
+    situation: 'Keeper parries — {striker} is first to the rebound!',
+    buildup: '{cam} fires in a low shot that the keeper can only parry. The ball drops loose inside the six-yard box. {striker} is fastest to react...',
     options: [
-      { text: 'Snap-shot the rebound', outcome: 'There to snap up the rebound — tucks it away!', scores: true },
-      { text: 'Poke it goalward with pace', outcome: 'Pokes it past the flailing keeper!', scores: true },
-      { text: 'Try to place it perfectly', outcome: 'Takes too long — defender smashes it clear.', scores: false },
+      { text: '{striker} snap-shots the rebound', outcome: '{striker} is there — snap shot into the net! Goal from the rebound!', scores: true },
+      { text: '{striker} pokes it goalward', outcome: '{striker} pokes it past the flailing keeper — it rolls into the net!', scores: true },
+      { text: 'Try to place it carefully', outcome: '{striker} takes too long — a defender slides in and smashes it clear.', scores: false },
     ]
   },
 ];
@@ -2497,110 +2637,122 @@ const ATTACKING_QUESTIONS = [
 const DEFENDING_QUESTIONS = [
   {
     id: 'def_1v1_keeper',
-    situation: 'Their striker is through 1v1 with your keeper!',
+    situation: '{opp} is clean through — 1v1 with {gk}!',
+    buildup: "A ball over the top has split your defence wide open. {opp} is in behind, racing toward goal. {def} can't get back...",
     options: [
-      { text: 'Slide tackle from behind', outcome: "Crunching tackle — wins the ball cleanly! Crisis averted.", saves: true },
-      { text: 'Jockey and wait', outcome: "Striker shifts left and fires — your keeper can't get across. GOAL.", saves: false },
-      { text: 'Try to body him off the ball', outcome: "Nudges him but he stays on and slots it past the keeper. GOAL.", saves: false },
+      { text: '{def} slide tackles', outcome: '{def} launches into a slide tackle — wins the ball cleanly! Crisis averted.', saves: true },
+      { text: '{gk} comes out to narrow the angle', outcome: '{gk} comes out but {opp} shifts and fires past him. GOAL.', saves: false },
+      { text: 'Jockey and wait', outcome: "{opp} shifts onto his left and fires low — {gk} can't get across in time. GOAL.", saves: false },
     ]
   },
   {
     id: 'def_penalty',
-    situation: 'PENALTY against you! Your keeper must save it!',
+    situation: 'PENALTY to {oppTeam}! {gk} faces {opp} from the spot!',
+    buildup: 'The referee points to the spot — {opp} steps up. {gk} bounces on his line. Crowd hush. Pressure is immense...',
     options: [
-      { text: 'Keeper dives left', outcome: 'Dives left — they shot right. GOAL.', saves: false },
-      { text: 'Keeper stays central', outcome: 'Stays put — they go down the middle — SAVED! Incredible!', saves: true },
-      { text: 'Keeper dives right', outcome: 'Dives right — they shot left. GOAL.', saves: false },
+      { text: '{gk} dives left', outcome: '{gk} dives left — {opp} shoots right. GOAL.', saves: false },
+      { text: '{gk} stays central', outcome: '{gk} stands his ground — {opp} goes down the middle — SAVED! Incredible!', saves: true },
+      { text: '{gk} dives right', outcome: '{gk} dives right — {opp} shoots left. GOAL.', saves: false },
     ]
   },
   {
     id: 'def_cross_unmarked',
-    situation: 'Dangerous cross coming in — their striker is free!',
+    situation: '{opp} is free at the back post — dangerous cross coming in!',
+    buildup: '{opp2} has got to the byline on the left. {opp} has made a run across the defender and is free at the back post...',
     options: [
-      { text: 'Defender rushes to clear early', outcome: 'Rushed clearance boots it away — lucky escape. No goal!', saves: true },
-      { text: "Track the striker's run", outcome: 'Tracks the run but loses him at the back post — headed in. GOAL.', saves: false },
-      { text: 'Hold the defensive line', outcome: 'Line holds but the cross drops to a different striker — tap-in. GOAL.', saves: false },
+      { text: '{def} rushes to clear early', outcome: '{def} gets there first — boots it clear! Lucky escape, no goal.', saves: true },
+      { text: 'Track the run closely', outcome: 'The tracking is fine but {opp} still gets there and heads it in. GOAL.', saves: false },
+      { text: 'Hold the defensive line', outcome: 'The line holds but the ball drops to a second {oppTeam} striker — tap-in. GOAL.', saves: false },
     ]
   },
   {
     id: 'def_winger_cutinside',
-    situation: 'Their winger cuts inside — shooting position!',
+    situation: "{opp} cuts inside from the right — he's lining up a shot!",
+    buildup: "{opp} has beaten your left back and drifted inside onto his stronger foot. He's 20 yards out and shaping to shoot...",
     options: [
-      { text: 'Pressure him hard', outcome: 'Forces a heavy touch — shot goes over the bar! Phew.', saves: true },
-      { text: 'Hold shape and block the angle', outcome: 'Shape is fine but he finds the gap — smashes it in. GOAL.', saves: false },
-      { text: 'Commit to the block', outcome: 'Committed too early — he steps around and scores. GOAL.', saves: false },
+      { text: '{def} closes him down hard', outcome: '{def} forces a heavy touch from {opp} — the shot flies over the bar!', saves: true },
+      { text: 'Hold shape, cover the near post', outcome: 'Shape is good but {opp} finds the far corner — goes in. GOAL.', saves: false },
+      { text: '{def} commits early to block', outcome: '{def} dives in too early — {opp} steps around and scores. GOAL.', saves: false },
     ]
   },
   {
     id: 'def_header_cross',
-    situation: 'Dangerous cross — their striker attacking the header!',
+    situation: '{opp} attacks a cross — dangerous header incoming!',
+    buildup: "A deep cross from the left finds {opp} running in at the back post. He's got a free header. {gk} has to decide...",
     options: [
-      { text: 'Keeper punches clear', outcome: 'Strong punch — keeper clears his lines! SAVED.', saves: true },
-      { text: 'Defender tries to clear', outcome: 'Defender mistimes it — striker nods it into the net. GOAL.', saves: false },
-      { text: 'Goalkeeper tries to catch', outcome: 'Fumbles the catch — striker bundles it in. GOAL.', saves: false },
+      { text: '{gk} punches it clear', outcome: '{gk} comes and punches it powerfully — clears his lines! SAVED.', saves: true },
+      { text: '{def} tries to head it clear', outcome: '{def} mistimes the jump — {opp} nods it into the net. GOAL.', saves: false },
+      { text: '{gk} tries to catch it', outcome: '{gk} fumbles the catch — {opp} bundles it in. GOAL.', saves: false },
     ]
   },
   {
     id: 'def_freekick',
-    situation: 'Free kick in a dangerous position — 20 yards out!',
+    situation: 'Free kick to {oppTeam} — 20 yards out, dangerous position!',
+    buildup: "{opp} lines up a direct free kick just outside the box. He's already scored two this season from similar positions...",
     options: [
-      { text: 'Pack the wall tight', outcome: 'Wall holds firm — shot hits the wall and deflects wide. Safe!', saves: true },
-      { text: 'Rush the kick', outcome: 'Rushed it — striker chips it over the charging wall. GOAL.', saves: false },
-      { text: 'Set a small wall, cover the corners', outcome: 'Small wall leaves a gap — drilled straight through. GOAL.', saves: false },
+      { text: 'Pack the wall tight with 5 men', outcome: "The wall holds firm — {opp}'s shot hits the wall and deflects wide. Safe!", saves: true },
+      { text: 'Rush the kick with 2 players', outcome: '{opp} chips it perfectly over the charging defenders. GOAL.', saves: false },
+      { text: 'Use a small wall, cover corners', outcome: 'The small wall leaves a gap — {opp} drives it straight through. GOAL.', saves: false },
     ]
   },
   {
     id: 'def_counter',
-    situation: 'Counter attack — their striker is breaking through!',
+    situation: '{opp} is leading a counter attack — racing through!',
+    buildup: 'You lost the ball high up the pitch. {opp} receives it in space and is bearing down on goal. Just your last man back...',
     options: [
-      { text: 'Last man sprint to cover', outcome: 'Last man gets back — brilliant covering tackle! No goal.', saves: true },
-      { text: 'Pull back and regroup', outcome: 'Pulled back but striker had too much pace — scores. GOAL.', saves: false },
-      { text: 'Tactical foul to stop the break', outcome: 'Yellow card shown — but the ref allows play on. GOAL anyway.', saves: false },
+      { text: '{def} sprints back to cover', outcome: '{def} makes a brilliant recovery tackle — {opp} is stopped! No goal.', saves: true },
+      { text: 'Drop back and regroup', outcome: '{opp} has too much space — drives in and finishes low. GOAL.', saves: false },
+      { text: 'Tactical foul — accept the yellow', outcome: 'Yellow card shown — but the ref plays advantage. {opp} scores. GOAL.', saves: false },
     ]
   },
   {
     id: 'def_corner_bigman',
-    situation: 'Corner — their big striker is attacking the near post!',
+    situation: "{opp} is attacking {oppTeam}'s corner — free header threat!",
+    buildup: '{oppTeam} have a corner. {opp} is making a near-post run. Your {def} needs to track him or {gk} needs to act...',
     options: [
-      { text: 'Man-mark him tightly', outcome: "Tight man-marking — he can't get a free run. Headed wide!", saves: true },
-      { text: 'Zone defence at the post', outcome: 'Zone defence leaves a gap — he attacks it and scores. GOAL.', saves: false },
-      { text: 'Attack the ball yourself', outcome: 'Defender goes for it but gets outjumped — heads it in. GOAL.', saves: false },
+      { text: '{def} man-marks {opp} tightly', outcome: "{def} stays tight — {opp} can't get a free run. The corner is headed wide!", saves: true },
+      { text: 'Zone defence at the post', outcome: 'Zone leaves a gap — {opp} attacks the space and heads it in. GOAL.', saves: false },
+      { text: '{gk} comes to claim the cross', outcome: '{gk} misjudges it — {opp} gets in front and nods it home. GOAL.', saves: false },
     ]
   },
   {
     id: 'def_longshot',
-    situation: 'Their midfielder shapes to shoot from distance!',
+    situation: '{opp} shapes to shoot from 25 yards out!',
+    buildup: 'The {oppTeam} midfielder has space. {opp} drops his shoulder and steps onto the ball 25 yards from goal...',
     options: [
-      { text: 'Close him down fast', outcome: 'Closed down brilliantly — shot scooped high over the bar!', saves: true },
-      { text: 'Drop into a defensive block', outcome: 'Block set up but he finds the gap — thunderbolt in. GOAL.', saves: false },
-      { text: 'Let him shoot — keeper is set', outcome: 'Keeper guesses wrong corner — screamer goes in. GOAL.', saves: false },
+      { text: '{def} closes him down fast', outcome: "{def} gets across quickly — {opp}'s shot is rushed and scoops over the bar!", saves: true },
+      { text: 'Drop into a defensive block', outcome: 'The block is set but {opp} finds the gap — thunderbolt goes in. GOAL.', saves: false },
+      { text: 'Let {gk} deal with it', outcome: '{gk} guesses wrong corner — the screamer goes in. GOAL.', saves: false },
     ]
   },
   {
     id: 'def_rebound_danger',
-    situation: 'Keeper makes a save but the rebound falls to their striker!',
+    situation: '{gk} parries — {opp} is first to the rebound!',
+    buildup: '{gk} makes a good initial save but can only parry the ball. It drops straight to {opp} inside the six-yard box...',
     options: [
-      { text: 'Defender dives to smother', outcome: 'Brave dive — smothers the rebound! Incredible defending.', saves: true },
-      { text: 'Keeper scrambles to recover', outcome: "Keeper not quick enough — striker taps in the rebound. GOAL.", saves: false },
-      { text: 'Hope it goes wide', outcome: "It doesn't go wide. GOAL.", saves: false },
+      { text: '{def} dives to smother the rebound', outcome: '{def} throws his body at it — smothers the rebound heroically! No goal.', saves: true },
+      { text: '{gk} scrambles to recover', outcome: '{gk} tries to scramble back but {opp} taps the rebound in. GOAL.', saves: false },
+      { text: 'Appeal for offside', outcome: 'No offside — {opp} taps it in. GOAL.', saves: false },
     ]
   },
   {
     id: 'def_through_ball',
-    situation: 'Through ball splits your defence — striker in on goal!',
+    situation: 'Through ball splits your defence — {opp} is in behind!',
+    buildup: "A brilliant lobbed pass from {opp2} has released {opp} in behind your defensive line. Your offside trap didn't work...",
     options: [
-      { text: 'Defender chases and lunges', outcome: 'Desperate lunge — gets a toe on it! Deflects wide for a corner.', saves: true },
-      { text: 'Keeper rushes out to claim', outcome: 'Keeper rushes but gets there a fraction late — lobbed into the net. GOAL.', saves: false },
-      { text: 'Hold defensive shape', outcome: 'Held shape but the striker still had enough space to finish. GOAL.', saves: false },
+      { text: '{def} chases and lunges', outcome: '{def} stretches and gets a toe on it — deflects wide for a corner. Phew!', saves: true },
+      { text: '{gk} rushes out to claim', outcome: '{gk} comes out but gets there a fraction late — {opp} lobs it into the net. GOAL.', saves: false },
+      { text: 'Hold defensive shape', outcome: 'Shape held but {opp} still had enough space to finish. GOAL.', saves: false },
     ]
   },
   {
     id: 'def_setpiece_header',
-    situation: 'Set piece delivery — their striker is completely free!',
+    situation: '{opp} is free from a set piece delivery — unmarked!',
+    buildup: "{oppTeam} deliver from a set piece. {opp} has made a clever run and lost his marker — he's completely free in the box...",
     options: [
-      { text: 'Last-ditch block on the line', outcome: 'Heroic block on the line — cleared to safety!', saves: true },
-      { text: 'Trust the keeper to claim', outcome: 'Keeper flaps — ball drops to striker for a simple finish. GOAL.', saves: false },
-      { text: 'Push out to catch offside', outcome: 'Offside trap not called — goal stands. GOAL.', saves: false },
+      { text: '{def} blocks it on the line', outcome: '{def} gets back to block it on the line — heroic defending! Cleared to safety!', saves: true },
+      { text: 'Trust {gk} to deal with it', outcome: '{gk} comes for it but flaps — {opp} taps in the loose ball. GOAL.', saves: false },
+      { text: 'Push out to catch offside', outcome: 'Offside trap not called — the goal stands. GOAL.', saves: false },
     ]
   },
 ];
@@ -2610,6 +2762,76 @@ const DEFENDING_QUESTIONS = [
 ═══════════════════════════════════════════ */
 let ACTIVE_MATCH = null;
 function clearEventTimers() {}
+
+function showPreMatchDraw(opponent, onStart) {
+  const content = document.getElementById('tournament-content');
+  content.innerHTML = '';
+  const t = STATE.tournament;
+  const ur = STATE.teamRatings;
+  const phaseLabels = { league:'Group Stage', r16:'Round of 16', qf:'Quarter-Final', sf:'Semi-Final', final:'The Final' };
+
+  const stats = [
+    { label:'Attack',   user: ur.attack,     opp: opponent.attack },
+    { label:'Defence',  user: ur.defence,    opp: opponent.defence },
+    { label:'Midfield', user: ur.midfield,   opp: opponent.midfield },
+    { label:'GK',       user: ur.goalkeeper, opp: opponent.goalkeeper },
+  ];
+
+  const userBetter = ur.overall > opponent.overall;
+  const diff = Math.abs(ur.overall - opponent.overall);
+  const diffLabel = diff <= 2 ? 'Evenly matched' : userBetter ? (diff >= 8 ? 'You are heavy favourites' : 'You are favourites') : (diff >= 8 ? 'You are heavy underdogs' : 'Tough match ahead');
+
+  const keyPlayersHTML = (opponent.keyPlayers || []).map(p => `<span class="pmk-player">${p}</span>`).join('');
+
+  const card = document.createElement('div');
+  card.className = 'pre-match-card';
+  card.innerHTML = `
+    <div class="pm-phase">${phaseLabels[t.phase] || t.phase} · ${t.phase === 'league' ? 'Match Day ' + (t.matchIndex+1) : ''}</div>
+    <div class="pm-matchup">
+      <div class="pm-team-block">
+        <div class="pm-team-name">Your XI</div>
+        <div class="pm-ovr">${ur.overall}</div>
+        <div class="pm-ovr-label">OVR</div>
+      </div>
+      <div class="pm-vs">VS</div>
+      <div class="pm-team-block pm-opp">
+        <div class="pm-team-name">${opponent.name}</div>
+        <div class="pm-ovr">${opponent.overall}</div>
+        <div class="pm-ovr-label">OVR</div>
+      </div>
+    </div>
+    <div class="pm-diff-label">${diffLabel}</div>
+    <div class="pm-stats">
+      ${stats.map(s => {
+        const max = Math.max(s.user, s.opp, 1);
+        const uPct = Math.round(s.user/max*100);
+        const oPct = Math.round(s.opp/max*100);
+        const uCol = s.user >= s.opp ? '#22c55e' : '#ef4444';
+        const oCol = s.opp >= s.user ? '#22c55e' : '#ef4444';
+        return `<div class="pm-stat-row">
+          <span class="pm-stat-val" style="color:${uCol}">${s.user}</span>
+          <div class="pm-stat-bars">
+            <div class="pm-bar-track"><div class="pm-bar-fill" style="width:${uPct}%;background:${uCol}"></div></div>
+            <div class="pm-stat-label">${s.label}</div>
+            <div class="pm-bar-track pm-bar-right"><div class="pm-bar-fill pm-bar-fill-right" style="width:${oPct}%;background:${oCol}"></div></div>
+          </div>
+          <span class="pm-stat-val pm-stat-val-right" style="color:${oCol}">${s.opp}</span>
+        </div>`;
+      }).join('')}
+    </div>
+    ${opponent.bio ? `<div class="pm-bio">
+      <div class="pm-bio-title">About ${opponent.name}</div>
+      <div class="pm-bio-text">${opponent.bio}</div>
+      ${keyPlayersHTML ? `<div class="pm-key-players">${keyPlayersHTML}</div>` : ''}
+    </div>` : ''}
+    <button class="btn btn-gold btn-lg pm-kickoff-btn" id="pm-kickoff-btn">⚽ Kick Off</button>
+  `;
+  content.appendChild(card);
+  document.getElementById('pm-kickoff-btn').onclick = () => {
+    content.innerHTML = '';
+    onStart();
+  };
+}
 
 function showNextMatch() {
   const t = STATE.tournament;
@@ -2640,6 +2862,41 @@ function showNextMatch() {
     if (i < defPool.length) queue.push({ ...defPool[i], type: 'defending' });
   }
 
+  // Extract player names by position for use in questions
+  const getByPos = (...positions) => {
+    for (const pos of positions) {
+      const found = Object.values(STATE.squad).find(p => p.position === pos || (p.altPositions||[]).includes(pos));
+      if (found) return found;
+    }
+    return null;
+  };
+  const striker  = getByPos('ST','CF');
+  const lwPlayer = getByPos('LW','CAM','RW');
+  const rwPlayer = getByPos('RW','LW','CAM');
+  const camPlayer= getByPos('CAM','CM','LW','RW');
+  const cmPlayer = getByPos('CM','CDM','CAM');
+  const gkPlayer = getByPos('GK');
+  const defPlayer= getByPos('CB','LB','RB');
+
+  const playerNames = {
+    striker:  striker  ? striker.name.split(' ').slice(-1)[0]  : 'Your striker',
+    lw:       lwPlayer ? lwPlayer.name.split(' ').slice(-1)[0] : 'Your winger',
+    rw:       rwPlayer ? rwPlayer.name.split(' ').slice(-1)[0] : 'Your winger',
+    cam:      camPlayer? camPlayer.name.split(' ').slice(-1)[0]: 'Your playmaker',
+    cm:       cmPlayer ? cmPlayer.name.split(' ').slice(-1)[0] : 'Your midfielder',
+    gk:       gkPlayer ? gkPlayer.name.split(' ').slice(-1)[0] : 'Your keeper',
+    def:      defPlayer? defPlayer.name.split(' ').slice(-1)[0]: 'Your defender',
+    opp:      (opponent.keyPlayers||[])[Math.floor(Math.random()*(opponent.keyPlayers||['Their striker']).length)] || 'Their striker',
+    opp2:     (opponent.keyPlayers||[])[1] || 'Their forward',
+  };
+
+  // Assign realistic minutes across 90 mins
+  const totalQ = queue.length;
+  queue.forEach((q, i) => {
+    const base = Math.round(5 + (80 / (totalQ + 1)) * (i + 1));
+    q.minute = Math.max(3, Math.min(90, base + Math.floor(Math.random() * 9) - 4));
+  });
+
   ACTIVE_MATCH = {
     opponent,
     homeScore: 0,
@@ -2647,6 +2904,7 @@ function showNextMatch() {
     queue,
     queueIndex: 0,
     fastForward: false,
+    playerNames,
     onComplete: (result) => {
       if (t.phase === 'league') {
         t.leagueResults.push({ ...result, opponentId: opponent.id, opponent });
@@ -2677,8 +2935,10 @@ function showNextMatch() {
     }
   };
 
-  renderMatchShell(opponent);
-  runMatchQuestions();
+  showPreMatchDraw(opponent, () => {
+    renderMatchShell(opponent);
+    runMatchQuestions();
+  });
 }
 
 function renderMatchShell(opponent) {
@@ -2750,10 +3010,52 @@ function runMatchQuestions() {
   }
 
   const q = m.queue[m.queueIndex];
-  showMatchQuestion(q, () => {
+  showMatchQuestion(q, (scored, conceded) => {
     m.queueIndex++;
-    setTimeout(() => runMatchQuestions(), 800);
+    if (m.queueIndex < m.queue.length) {
+      const caption = getMatchCaption(q.minute || 45, m.homeScore, m.awayScore, m.opponent, m.playerNames);
+      showMatchCaption(caption, () => runMatchQuestions());
+    } else {
+      setTimeout(() => runMatchQuestions(), 600);
+    }
   });
+}
+
+function getMatchCaption(minute, homeScore, awayScore, opponent, pNames) {
+  const oppName = opponent.name.split(' ').slice(0,2).join(' ');
+  const pools = [];
+  if (homeScore > awayScore) pools.push('You look in control. Keep the pressure on.', 'Your team is growing in confidence.', oppName + ' need to respond.');
+  else if (awayScore > homeScore) pools.push('You need to react — push forward.', oppName + ' are looking dangerous.', 'Your team needs to dig deep now.');
+  else pools.push("It's tight. One moment could decide this.", 'Both sides are level — anything could happen.', 'The midfield battle is intense.');
+  if (minute > 75) pools.push('We are in the final stages. Every second counts.', 'The crowd are on the edge of their seats.', 'Nerves of steel needed here.');
+  if (Math.random() < 0.25) pools.push('🟨 Yellow card — a crunching challenge in midfield.', '🟨 The referee flashes the card. ' + oppName + ' are frustrated.', '🟨 ' + (pNames ? pNames.cm : 'Your midfielder') + ' gets booked for a late tackle — he must be careful.');
+  else pools.push('Your midfield is controlling possession.', 'The pace of the game is relentless.', 'The stadium atmosphere is electric.', 'Tactical battle developing in the centre.', 'Both goalkeepers are alert.');
+  return pools[Math.floor(Math.random() * pools.length)];
+}
+
+function showMatchCaption(text, cb) {
+  const existing = document.getElementById('match-caption');
+  if (existing) existing.remove();
+  const el = document.createElement('div');
+  el.id = 'match-caption';
+  el.className = 'match-caption';
+  el.textContent = text;
+  const content = document.getElementById('tournament-content');
+  if (content) content.appendChild(el);
+  setTimeout(() => { el.classList.add('fade-out'); setTimeout(() => { el.remove(); cb(); }, 400); }, 1600);
+}
+
+function showGoalBanner(type, homeScore, awayScore, oppName) {
+  const existing = document.getElementById('goal-banner');
+  if (existing) existing.remove();
+  const banner = document.createElement('div');
+  banner.id = 'goal-banner';
+  banner.className = 'goal-banner ' + type;
+  banner.innerHTML = type === 'scored'
+    ? `<div class="gb-icon">⚽</div><div class="gb-text">GOAL!</div><div class="gb-score">Your XI ${homeScore} – ${awayScore} ${oppName}</div>`
+    : `<div class="gb-icon">❌</div><div class="gb-text">GOAL CONCEDED</div><div class="gb-score">Your XI ${homeScore} – ${awayScore} ${oppName}</div>`;
+  document.body.appendChild(banner);
+  setTimeout(() => { banner.classList.add('banner-out'); setTimeout(() => banner.remove(), 400); }, 1600);
 }
 
 function showMatchQuestion(q, onComplete) {
@@ -2772,13 +3074,23 @@ function showMatchQuestion(q, onComplete) {
   const qNum = m.queueIndex + 1;
   const total = m.queue.length;
   const typeLabel = q.type === 'attacking' ? '⚽ CHANCE TO SCORE' : '🛡️ DEFEND YOUR GOAL';
+  const pn = m.playerNames || {};
+  const oppName = m.opponent.name.split(' ').slice(0,2).join(' ');
+
+  // Substitute player name placeholders
+  const subNames = (str) => (str||'').replace(/{striker}/g, pn.striker||'Your striker').replace(/{lw}/g, pn.lw||'Your winger').replace(/{rw}/g, pn.rw||'Your winger').replace(/{cam}/g, pn.cam||'Your playmaker').replace(/{cm}/g, pn.cm||'Your midfielder').replace(/{gk}/g, pn.gk||'Your keeper').replace(/{def}/g, pn.def||'Your defender').replace(/{opp}/g, pn.opp||'Their striker').replace(/{opp2}/g, pn.opp2||'Their forward').replace(/{oppTeam}/g, oppName);
+
+  const situationText = subNames(q.situation);
+  const buildupText = q.buildup ? subNames(q.buildup) : '';
+  const minuteBadge = q.minute ? `<span class="mq-minute">${q.minute}'</span>` : '';
 
   panel.innerHTML = `
     <div class="mq-header">
       <span class="mq-type ${q.type}">${typeLabel}</span>
-      <span class="mq-counter">${qNum} / ${total}</span>
+      <span class="mq-counter">${minuteBadge} ${qNum} / ${total}</span>
     </div>
-    <div class="mq-situation">${q.situation}</div>
+    ${buildupText ? `<div class="mq-buildup">${buildupText}</div>` : ''}
+    <div class="mq-situation">${situationText}</div>
     <div class="mq-buttons" id="mq-buttons"></div>
     <div class="mq-outcome" id="mq-outcome" style="display:none"></div>
   `;
@@ -2800,6 +3112,8 @@ function showMatchQuestion(q, onComplete) {
       if (scored) m.homeScore++;
       if (conceded) m.awayScore++;
 
+      if (scored || conceded) showGoalBanner(scored ? 'scored' : 'conceded', m.homeScore, m.awayScore, oppName);
+
       const sH = document.getElementById('score-home');
       const sA = document.getElementById('score-away');
       const liveEl = document.getElementById('live-score');
@@ -2814,7 +3128,7 @@ function showMatchQuestion(q, onComplete) {
         else if (saved) badge = '<span class="mq-badge save">🧤 SAVED!</span>';
         else if (conceded) badge = '<span class="mq-badge concede">❌ GOAL CONCEDED</span>';
         else badge = '<span class="mq-badge miss">🌬️ MISS</span>';
-        outcomeEl.innerHTML = badge + '<div class="mq-outcome-text">' + opt.outcome + '</div>';
+        outcomeEl.innerHTML = badge + '<div class="mq-outcome-text">' + subNames(opt.outcome) + '</div>';
         outcomeEl.style.display = 'block';
       }
 
@@ -3413,36 +3727,36 @@ function tierFromRating(r) {
    OPPONENT TEAMS (pre-rated)
 ═══════════════════════════════════════════ */
 const OPPONENT_TEAMS = [
-  { id:'barca_0809',  name:'Barcelona 08/09',       attack:94, midfield:91, defence:82, goalkeeper:80, overall:88 },
-  { id:'barca_1415',  name:'Barcelona 14/15',       attack:97, midfield:88, defence:79, goalkeeper:77, overall:87 },
-  { id:'rm_1314',     name:'Real Madrid 13/14',     attack:92, midfield:85, defence:80, goalkeeper:82, overall:86 },
-  { id:'rm_1718',     name:'Real Madrid 17/18',     attack:91, midfield:84, defence:81, goalkeeper:85, overall:86 },
-  { id:'manutd_9899', name:'Man United 98/99',      attack:87, midfield:83, defence:82, goalkeeper:79, overall:83 },
-  { id:'manutd_0708', name:'Man United 07/08',      attack:89, midfield:86, defence:80, goalkeeper:83, overall:85 },
-  { id:'chelsea_1112',name:'Chelsea 11/12',         attack:82, midfield:80, defence:86, goalkeeper:87, overall:84 },
-  { id:'chelsea_2021',name:'Chelsea 20/21',         attack:83, midfield:82, defence:84, goalkeeper:83, overall:83 },
-  { id:'liverpool_0405',name:'Liverpool 04/05',     attack:82, midfield:80, defence:79, goalkeeper:84, overall:81 },
-  { id:'liverpool_1819',name:'Liverpool 18/19',     attack:90, midfield:85, defence:87, goalkeeper:88, overall:88 },
-  { id:'arsenal_0304', name:'Arsenal 03/04',        attack:87, midfield:85, defence:83, goalkeeper:80, overall:85 },
-  { id:'acmilan_0203', name:'AC Milan 02/03',       attack:85, midfield:84, defence:88, goalkeeper:89, overall:87 },
-  { id:'acmilan_0607', name:'AC Milan 06/07',       attack:87, midfield:82, defence:86, goalkeeper:87, overall:86 },
-  { id:'inter_0910',  name:'Inter Milan 09/10',     attack:86, midfield:84, defence:86, goalkeeper:82, overall:85 },
-  { id:'juve_1415',   name:'Juventus 14/15',        attack:83, midfield:84, defence:88, goalkeeper:85, overall:86 },
-  { id:'juve_1617',   name:'Juventus 16/17',        attack:87, midfield:83, defence:87, goalkeeper:84, overall:86 },
-  { id:'bayern_1213', name:'Bayern Munich 12/13',   attack:90, midfield:88, defence:85, goalkeeper:86, overall:88 },
-  { id:'bayern_1920', name:'Bayern Munich 19/20',   attack:93, midfield:88, defence:84, goalkeeper:87, overall:89 },
-  { id:'bvb_1112',    name:'Borussia Dortmund 11/12',attack:87,midfield:85, defence:80, goalkeeper:78, overall:84 },
-  { id:'atletico_1314',name:'Atletico Madrid 13/14',attack:80, midfield:81, defence:90, goalkeeper:85, overall:84 },
-  { id:'atletico_1516',name:'Atletico Madrid 15/16',attack:79, midfield:80, defence:91, goalkeeper:84, overall:84 },
-  { id:'psg_2122',    name:'PSG 21/22',             attack:95, midfield:84, defence:79, goalkeeper:83, overall:87 },
-  { id:'mancity_2223',name:'Man City 22/23',        attack:90, midfield:92, defence:85, goalkeeper:83, overall:89 },
-  { id:'ajax_9495',   name:'Ajax 94/95',            attack:86, midfield:84, defence:82, goalkeeper:80, overall:84 },
-  { id:'porto_0304',  name:'Porto 03/04',           attack:80, midfield:80, defence:81, goalkeeper:78, overall:80 },
-  { id:'monaco_1617', name:'Monaco 16/17',          attack:88, midfield:83, defence:76, goalkeeper:74, overall:82 },
-  { id:'napoli_2223', name:'Napoli 22/23',          attack:87, midfield:86, defence:81, goalkeeper:82, overall:85 },
-  { id:'leverkusen_2324',name:'Bayer Leverkusen 23/24',attack:86,midfield:87,defence:82,goalkeeper:79,overall:84},
-  { id:'valencia_0102',name:'Valencia 01/02',       attack:82, midfield:81, defence:83, goalkeeper:80, overall:82 },
-  { id:'acmilan_8889',name:'AC Milan 88/89',        attack:84, midfield:83, defence:88, goalkeeper:88, overall:86 },
+  { id:'barca_0809',  name:'Barcelona 08/09', attack:94, midfield:91, defence:82, goalkeeper:80, overall:88, bio:"Pep Guardiola's treble-winning side. Xavi and Iniesta controlled the midfield like no team before them.", keyPlayers:['Messi',"Eto'o",'Henry','Xavi','Iniesta'] },
+  { id:'barca_1415',  name:'Barcelona 14/15', attack:97, midfield:88, defence:79, goalkeeper:77, overall:87, bio:"The MSN era. Messi, Suárez and Neymar — the most devastating front three in history. Another treble.", keyPlayers:['Messi','Suárez','Neymar','Iniesta','Busquets'] },
+  { id:'rm_1314',     name:'Real Madrid 13/14', attack:92, midfield:85, defence:80, goalkeeper:82, overall:86, bio:"La Décima. Carlo Ancelotti's side ended a 12-year wait for the Champions League with Ronaldo at his peak.", keyPlayers:['Ronaldo','Bale','Benzema','Di María','Modric'] },
+  { id:'rm_1718',     name:'Real Madrid 17/18', attack:91, midfield:84, defence:81, goalkeeper:85, overall:86, bio:"Three in a row. Zidane's side won their third consecutive Champions League with Ronaldo in unstoppable form.", keyPlayers:['Ronaldo','Benzema','Bale','Modric','Ramos'] },
+  { id:'manutd_9899', name:'Man United 98/99', attack:87, midfield:83, defence:82, goalkeeper:79, overall:83, bio:"Ferguson's Treble winners. Sheringham and Solskjær scored in the dying seconds of the Champions League final.", keyPlayers:['Beckham','Giggs','Scholes','Cole','Yorke'] },
+  { id:'manutd_0708', name:'Man United 07/08', attack:89, midfield:86, defence:80, goalkeeper:83, overall:85, bio:"Ronaldo's best United season — 42 goals. Won the league and Champions League, beating Chelsea on penalties.", keyPlayers:['Ronaldo','Rooney','Tevez','Giggs','Ferdinand'] },
+  { id:'chelsea_1112',name:'Chelsea 11/12', attack:82, midfield:80, defence:86, goalkeeper:87, overall:84, bio:"Di Matteo's miraculous run. Knocked out Napoli, Benfica, Barcelona and Bayern to win the Champions League.", keyPlayers:['Drogba','Lampard','Terry','Čech','Mata'] },
+  { id:'chelsea_2021',name:'Chelsea 20/21', attack:83, midfield:82, defence:84, goalkeeper:83, overall:83, bio:"Tuchel transformed Chelsea from mid-table to Champions League winners in just a few months.", keyPlayers:['Havertz','Mount','Werner','Jorginho','Kanté'] },
+  { id:'liverpool_0405',name:'Liverpool 04/05', attack:82, midfield:80, defence:79, goalkeeper:84, overall:81, bio:"The miracle of Istanbul. 3-0 down at half time to Milan, Liverpool came back to win on penalties.", keyPlayers:['Gerrard','García','Baroš','Carragher','Dudek'] },
+  { id:'liverpool_1819',name:'Liverpool 18/19', attack:90, midfield:85, defence:87, goalkeeper:88, overall:88, bio:"Klopp's warriors lost the league by a point but won the Champions League in Madrid against Spurs.", keyPlayers:['Salah','Mané','Firmino','Van Dijk','Alisson'] },
+  { id:'arsenal_0304', name:'Arsenal 03/04', attack:87, midfield:85, defence:83, goalkeeper:80, overall:85, bio:"The Invincibles. Wenger's side went the entire Premier League season unbeaten — 26 wins, 12 draws.", keyPlayers:['Henry','Bergkamp','Pires','Vieira','Ashley Cole'] },
+  { id:'acmilan_0203', name:'AC Milan 02/03', attack:85, midfield:84, defence:88, goalkeeper:89, overall:87, bio:"Ancelotti's Milan were a defensive fortress. Maldini, Nesta and Buffon's rival Dida shut everyone out.", keyPlayers:['Shevchenko','Kaká','Pirlo','Maldini','Nesta'] },
+  { id:'acmilan_0607', name:'AC Milan 06/07', attack:87, midfield:82, defence:86, goalkeeper:87, overall:86, bio:"Milan avenged Istanbul by beating Liverpool 2-1 in Athens. Kaká was the best player in the world.", keyPlayers:['Kaká','Inzaghi','Seedorf','Pirlo','Maldini'] },
+  { id:'inter_0910',  name:'Inter Milan 09/10', attack:86, midfield:84, defence:86, goalkeeper:82, overall:85, bio:"Mourinho's impossible treble. Inter beat Barça and Bayern to win Serie A, Coppa Italia and Champions League.", keyPlayers:['Milito',"Eto'o",'Sneijder','Zanetti','Cambiasso'] },
+  { id:'juve_1415',   name:'Juventus 14/15', attack:83, midfield:84, defence:88, goalkeeper:85, overall:86, bio:"Allegri's Juve reached the Champions League final with one of the best defences in Italian history.", keyPlayers:['Tevez','Pirlo','Pogba','Vidal','Bonucci'] },
+  { id:'juve_1617',   name:'Juventus 16/17', attack:87, midfield:83, defence:87, goalkeeper:84, overall:86, bio:"With Higuaín signing, Juve dominated Serie A. Lost the CL final to Real Madrid after a stunning run.", keyPlayers:['Higuaín','Dybala','Mandzukić','Bonucci','Buffon'] },
+  { id:'bayern_1213', name:'Bayern Munich 12/13', attack:90, midfield:88, defence:85, goalkeeper:86, overall:88, bio:"Jupp Heynckes' treble. Bayern demolished opponents all season — the most dominant German side ever.", keyPlayers:['Robben','Ribéry','Müller','Schweinsteiger','Neuer'] },
+  { id:'bayern_1920', name:'Bayern Munich 19/20', attack:93, midfield:88, defence:84, goalkeeper:87, overall:89, bio:"Flick's Bayern won 11 straight in the Champions League. Lewandowski scored 55 goals in all competitions.", keyPlayers:['Lewandowski','Gnabry','Müller','Kimmich','Neuer'] },
+  { id:'bvb_1112',    name:'Borussia Dortmund 11/12', attack:87, midfield:85, defence:80, goalkeeper:78, overall:84, bio:"Klopp's young Dortmund were electrifying. Reus, Götze and Lewandowski lit up the Bundesliga.", keyPlayers:['Lewandowski','Götze','Reus','Hummels','Weidenfeller'] },
+  { id:'atletico_1314',name:'Atletico Madrid 13/14', attack:80, midfield:81, defence:90, goalkeeper:85, overall:84, bio:"Simeone's warriors won La Liga and reached the CL final. Oblak's wall conceded almost nothing.", keyPlayers:['Diego Costa','Villa','David Villa','Koke','Godin'] },
+  { id:'atletico_1516',name:'Atletico Madrid 15/16', attack:79, midfield:80, defence:91, goalkeeper:84, overall:84, bio:"Atlético reached the CL final again, losing to Real Madrid on penalties after a Ramos header equaliser.", keyPlayers:['Griezmann','Torres','Koke','Godin','Oblak'] },
+  { id:'psg_2122',    name:'PSG 21/22', attack:95, midfield:84, defence:79, goalkeeper:83, overall:87, bio:"The Messi, Neymar and Mbappé project. On paper the best attack in history — but the team never clicked.", keyPlayers:['Mbappé','Messi','Neymar','Di María','Marquinhos'] },
+  { id:'mancity_2223',name:'Man City 22/23', attack:90, midfield:92, defence:85, goalkeeper:83, overall:89, bio:"Guardiola's treble. Haaland scored 52 goals in his debut season as City dominated English and European football.", keyPlayers:['Haaland','De Bruyne','Foden','Rodri','Gvardiol'] },
+  { id:'ajax_9495',   name:'Ajax 94/95', attack:86, midfield:84, defence:82, goalkeeper:80, overall:84, bio:"Van Gaal's young Ajax won the Champions League, Eredivisie and were packed with future stars.", keyPlayers:['Kluivert','Litmanen','Davids','De Boer','Seedorf'] },
+  { id:'porto_0304',  name:'Porto 03/04', attack:80, midfield:80, defence:81, goalkeeper:78, overall:80, bio:"Mourinho's shock Champions League winners. Porto beat Man United, Lyon and Monaco on their way to glory.", keyPlayers:['Deco','Costinha','McCarthy','Carvalho','Vítor Baía'] },
+  { id:'monaco_1617', name:'Monaco 16/17', attack:88, midfield:83, defence:76, goalkeeper:74, overall:82, bio:"The most exciting team of the decade. Mbappé, Bernardo Silva and Lemar played fearless, attacking football.", keyPlayers:['Mbappé','Falcao','Bernardo Silva','Lemar','Fabinho'] },
+  { id:'napoli_2223', name:'Napoli 22/23', attack:87, midfield:86, defence:81, goalkeeper:82, overall:85, bio:"Spalletti's Napoli won their first Serie A title in 33 years with Osimhen and Kvaratskhelia unstoppable.", keyPlayers:['Osimhen','Kvaratskhelia','Zielinski','Di Lorenzo','Meret'] },
+  { id:'leverkusen_2324',name:'Bayer Leverkusen 23/24', attack:86, midfield:87, defence:82, goalkeeper:79, overall:84, bio:"Xabi Alonso's unbeaten Bundesliga champions. Granit Xhaka reinvented himself; Wirtz was unmatchable.", keyPlayers:['Wirtz','Boniface','Xhaka','Grimaldo','Tah'] },
+  { id:'valencia_0102',name:'Valencia 01/02', attack:82, midfield:81, defence:83, goalkeeper:80, overall:82, bio:"Benítez's Valencia were the surprise of Europe — tough, organised and dangerous on the counter.", keyPlayers:['Carew','Ayala','Baraja','Aimar','Cañizares'] },
+  { id:'acmilan_8889',name:'AC Milan 88/89', attack:84, midfield:83, defence:88, goalkeeper:88, overall:86, bio:"Sacchi's revolutionary AC Milan. The pressing game pioneered by Sacchi made them European champions.", keyPlayers:['Van Basten','Gullit','Rijkaard','Maldini','Baresi'] },
 ];
 
 /* ═══════════════════════════════════════════
