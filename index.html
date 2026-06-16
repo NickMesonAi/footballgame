@@ -251,6 +251,30 @@ h1, h2, h3 { font-family: 'Bebas Neue', sans-serif; letter-spacing: 0.04em; colo
   border-width: 2px;
   box-shadow: 0 0 0 3px rgba(245,216,74,0.2);
 }
+/* era grid reuses formation-card visuals */
+.era-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 20px;
+  width: 100%;
+  max-width: 900px;
+  margin: 0 auto;
+}
+.era-card {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 26px 16px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  display: flex; flex-direction: column;
+  align-items: center; gap: 8px;
+  text-align: center;
+}
+.era-card:hover { border-color: var(--blue); transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,54,224,0.12); }
+.era-card-label { font-family: 'Bebas Neue', sans-serif; font-size: 2rem; color: var(--text-dark); letter-spacing: 0.05em; }
+.era-card-range { font-size: 0.8rem; color: var(--text-muted); }
+.era-card-desc { font-size: 0.78rem; color: var(--text-muted); margin-top: 4px; line-height: 1.4; }
 .formation-card.selected::before {
   background: var(--yellow);
   opacity: 1;
@@ -1617,10 +1641,26 @@ h1, h2, h3 { font-family: 'Bebas Neue', sans-serif; letter-spacing: 0.04em; colo
     <div class="start-title">
       Super<br>League<br><em>Draft</em>
     </div>
-    <button class="btn btn-gold btn-lg" onclick="goToFormation()" style="font-size:1.2rem;padding:18px 56px;letter-spacing:0.18em;">
+    <button class="btn btn-gold btn-lg" onclick="goToEra()" style="font-size:1.2rem;padding:18px 56px;letter-spacing:0.18em;">
       Start Game
     </button>
   </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     SCREEN 1B: ERA SELECTION
+═══════════════════════════════════════════ -->
+<div id="screen-era" class="screen">
+  <div class="formation-header">
+    <h2>Choose Your Era</h2>
+    <p>Pick a decade — your draft pool and opponents are pulled only from that era.</p>
+  </div>
+  <div class="era-grid" id="era-grid">
+    <!-- Filled by JS -->
+  </div>
+  <button class="btn btn-ghost" onclick="showScreen('start')" style="margin-top:8px;">
+    ← Back
+  </button>
 </div>
 
 <!-- ═══════════════════════════════════════════
@@ -1797,6 +1837,7 @@ const STATE = {
   activeDraftSlot: null,
   rerolls: 3,          // free re-rolls remaining
   currentRoll: null,   // current rolled team players
+  era: null,           // '90s' | '00s' | '10s' | '20s'
   tournament: {
     phase: 'league',   // 'league' | 'r16' | 'qf' | 'sf' | 'final'
     matchIndex: 0,
@@ -1923,6 +1964,39 @@ function showScreen(id) {
 }
 
 /* ═══════════════════════════════════════════
+   ERA SELECTION
+═══════════════════════════════════════════ */
+const ERAS = [
+  { key: '90s', label: '90s', range: '1990 – 1999', desc: 'Total Football, sweeper systems, classic European Cup royalty.' },
+  { key: '00s', label: '00s', range: '2000 – 2009', desc: 'Galacticos, the rise of tiki-taka, Mourinho\'s arrival.' },
+  { key: '10s', label: '10s', range: '2010 – 2019', desc: 'Peak Messi vs Ronaldo, gegenpressing, tactical evolution.' },
+  { key: '20s', label: '20s', range: '2020 – present', desc: 'Modern football — pace, pressing, and new superclubs.' },
+];
+function getEraFromSeason(season) {
+  const year = parseInt(String(season).slice(0, 4), 10);
+  if (year < 2000) return '90s';
+  if (year < 2010) return '00s';
+  if (year < 2020) return '10s';
+  return '20s';
+}
+function goToEra() {
+  const grid = document.getElementById('era-grid');
+  grid.innerHTML = '';
+  ERAS.forEach(e => {
+    const card = document.createElement('div');
+    card.className = 'era-card';
+    card.onclick = () => { STATE.era = e.key; STATE._teamGroups = null; goToFormation(); };
+    card.innerHTML = `
+      <div class="era-card-label">${e.label}</div>
+      <div class="era-card-range">${e.range}</div>
+      <div class="era-card-desc">${e.desc}</div>
+    `;
+    grid.appendChild(card);
+  });
+  showScreen('era');
+}
+
+/* ═══════════════════════════════════════════
    FORMATION SCREEN
 ═══════════════════════════════════════════ */
 function goToFormation() {
@@ -1985,11 +2059,12 @@ function resetDiceUI() {
   document.getElementById('btn-reroll').disabled = STATE.rerolls <= 0;
 }
 
-// Build a grouped lookup: team+season → players[]
+// Build a grouped lookup: team+season → players[], filtered to the selected era
 function getTeamGroups() {
   if (!STATE._teamGroups) {
     const g = {};
     PLAYERS.forEach(p => {
+      if (STATE.era && getEraFromSeason(p.season) !== STATE.era) return;
       const k = p.team + '|' + p.season;
       if (!g[k]) g[k] = { teamName: p.team + ' ' + p.season, players: [] };
       g[k].players.push(p);
@@ -2679,8 +2754,9 @@ function startTournament() {
   t.qualified = false;
   t.knockoutRound = 0;
   t.knockoutResults = [];
-  // pick 4 random opponents for group phase
-  const pool = [...OPPONENT_TEAMS];
+  // pick 4 random opponents for group phase, restricted to the chosen era
+  const eraPool = OPPONENT_TEAMS.filter(o => o.era === STATE.era);
+  const pool = [...(eraPool.length ? eraPool : OPPONENT_TEAMS)];
   shuffle(pool);
   t.opponents = pool.slice(0, 4);
   showScreen('tournament');
@@ -3034,11 +3110,13 @@ function showNextMatch() {
   if (t.phase === 'league') {
     opponent = t.opponents[t.matchIndex];
   } else {
-    const remaining = OPPONENT_TEAMS.filter(o =>
+    const eraTeams = OPPONENT_TEAMS.filter(o => o.era === STATE.era);
+    const basePool = eraTeams.length ? eraTeams : OPPONENT_TEAMS;
+    const remaining = basePool.filter(o =>
       !t.knockoutResults.some(r => r.opponentId === o.id)
     );
     shuffle(remaining);
-    opponent = remaining[0] || OPPONENT_TEAMS[Math.floor(Math.random() * OPPONENT_TEAMS.length)];
+    opponent = remaining[0] || basePool[Math.floor(Math.random() * basePool.length)];
   }
 
   const userOverall = STATE.teamRatings.overall;
@@ -3922,42 +4000,412 @@ function tierFromRating(r) {
    OPPONENT TEAMS (pre-rated)
 ═══════════════════════════════════════════ */
 const OPPONENT_TEAMS = [
-  { id:'barca_0809',  name:'Barcelona 08/09', attack:94, midfield:91, defence:82, goalkeeper:80, overall:88, bio:"Pep Guardiola's treble-winning side. Xavi and Iniesta controlled the midfield like no team before them.", keyPlayers:['Messi',"Eto'o",'Henry','Xavi','Iniesta'] },
-  { id:'barca_1415',  name:'Barcelona 14/15', attack:97, midfield:88, defence:79, goalkeeper:77, overall:87, bio:"The MSN era. Messi, Suárez and Neymar — the most devastating front three in history. Another treble.", keyPlayers:['Messi','Suárez','Neymar','Iniesta','Busquets'] },
-  { id:'rm_1314',     name:'Real Madrid 13/14', attack:92, midfield:85, defence:80, goalkeeper:82, overall:86, bio:"La Décima. Carlo Ancelotti's side ended a 12-year wait for the Champions League with Ronaldo at his peak.", keyPlayers:['Ronaldo','Bale','Benzema','Di María','Modric'] },
-  { id:'rm_1718',     name:'Real Madrid 17/18', attack:91, midfield:84, defence:81, goalkeeper:85, overall:86, bio:"Three in a row. Zidane's side won their third consecutive Champions League with Ronaldo in unstoppable form.", keyPlayers:['Ronaldo','Benzema','Bale','Modric','Ramos'] },
-  { id:'manutd_9899', name:'Man United 98/99', attack:87, midfield:83, defence:82, goalkeeper:79, overall:83, bio:"Ferguson's Treble winners. Sheringham and Solskjær scored in the dying seconds of the Champions League final.", keyPlayers:['Beckham','Giggs','Scholes','Cole','Yorke'] },
-  { id:'manutd_0708', name:'Man United 07/08', attack:89, midfield:86, defence:80, goalkeeper:83, overall:85, bio:"Ronaldo's best United season — 42 goals. Won the league and Champions League, beating Chelsea on penalties.", keyPlayers:['Ronaldo','Rooney','Tevez','Giggs','Ferdinand'] },
-  { id:'chelsea_1112',name:'Chelsea 11/12', attack:82, midfield:80, defence:86, goalkeeper:87, overall:84, bio:"Di Matteo's miraculous run. Knocked out Napoli, Benfica, Barcelona and Bayern to win the Champions League.", keyPlayers:['Drogba','Lampard','Terry','Čech','Mata'] },
-  { id:'chelsea_2021',name:'Chelsea 20/21', attack:83, midfield:82, defence:84, goalkeeper:83, overall:83, bio:"Tuchel transformed Chelsea from mid-table to Champions League winners in just a few months.", keyPlayers:['Havertz','Mount','Werner','Jorginho','Kanté'] },
-  { id:'liverpool_0405',name:'Liverpool 04/05', attack:82, midfield:80, defence:79, goalkeeper:84, overall:81, bio:"The miracle of Istanbul. 3-0 down at half time to Milan, Liverpool came back to win on penalties.", keyPlayers:['Gerrard','García','Baroš','Carragher','Dudek'] },
-  { id:'liverpool_1819',name:'Liverpool 18/19', attack:90, midfield:85, defence:87, goalkeeper:88, overall:88, bio:"Klopp's warriors lost the league by a point but won the Champions League in Madrid against Spurs.", keyPlayers:['Salah','Mané','Firmino','Van Dijk','Alisson'] },
-  { id:'arsenal_0304', name:'Arsenal 03/04', attack:87, midfield:85, defence:83, goalkeeper:80, overall:85, bio:"The Invincibles. Wenger's side went the entire Premier League season unbeaten — 26 wins, 12 draws.", keyPlayers:['Henry','Bergkamp','Pires','Vieira','Ashley Cole'] },
-  { id:'acmilan_0203', name:'AC Milan 02/03', attack:85, midfield:84, defence:88, goalkeeper:89, overall:87, bio:"Ancelotti's Milan were a defensive fortress. Maldini, Nesta and Buffon's rival Dida shut everyone out.", keyPlayers:['Shevchenko','Kaká','Pirlo','Maldini','Nesta'] },
-  { id:'acmilan_0607', name:'AC Milan 06/07', attack:87, midfield:82, defence:86, goalkeeper:87, overall:86, bio:"Milan avenged Istanbul by beating Liverpool 2-1 in Athens. Kaká was the best player in the world.", keyPlayers:['Kaká','Inzaghi','Seedorf','Pirlo','Maldini'] },
-  { id:'inter_0910',  name:'Inter Milan 09/10', attack:86, midfield:84, defence:86, goalkeeper:82, overall:85, bio:"Mourinho's impossible treble. Inter beat Barça and Bayern to win Serie A, Coppa Italia and Champions League.", keyPlayers:['Milito',"Eto'o",'Sneijder','Zanetti','Cambiasso'] },
-  { id:'juve_1415',   name:'Juventus 14/15', attack:83, midfield:84, defence:88, goalkeeper:85, overall:86, bio:"Allegri's Juve reached the Champions League final with one of the best defences in Italian history.", keyPlayers:['Tevez','Pirlo','Pogba','Vidal','Bonucci'] },
-  { id:'juve_1617',   name:'Juventus 16/17', attack:87, midfield:83, defence:87, goalkeeper:84, overall:86, bio:"With Higuaín signing, Juve dominated Serie A. Lost the CL final to Real Madrid after a stunning run.", keyPlayers:['Higuaín','Dybala','Mandzukić','Bonucci','Buffon'] },
-  { id:'bayern_1213', name:'Bayern Munich 12/13', attack:90, midfield:88, defence:85, goalkeeper:86, overall:88, bio:"Jupp Heynckes' treble. Bayern demolished opponents all season — the most dominant German side ever.", keyPlayers:['Robben','Ribéry','Müller','Schweinsteiger','Neuer'] },
-  { id:'bayern_1920', name:'Bayern Munich 19/20', attack:93, midfield:88, defence:84, goalkeeper:87, overall:89, bio:"Flick's Bayern won 11 straight in the Champions League. Lewandowski scored 55 goals in all competitions.", keyPlayers:['Lewandowski','Gnabry','Müller','Kimmich','Neuer'] },
-  { id:'bvb_1112',    name:'Borussia Dortmund 11/12', attack:87, midfield:85, defence:80, goalkeeper:78, overall:84, bio:"Klopp's young Dortmund were electrifying. Reus, Götze and Lewandowski lit up the Bundesliga.", keyPlayers:['Lewandowski','Götze','Reus','Hummels','Weidenfeller'] },
-  { id:'atletico_1314',name:'Atletico Madrid 13/14', attack:80, midfield:81, defence:90, goalkeeper:85, overall:84, bio:"Simeone's warriors won La Liga and reached the CL final. Oblak's wall conceded almost nothing.", keyPlayers:['Diego Costa','Villa','David Villa','Koke','Godin'] },
-  { id:'atletico_1516',name:'Atletico Madrid 15/16', attack:79, midfield:80, defence:91, goalkeeper:84, overall:84, bio:"Atlético reached the CL final again, losing to Real Madrid on penalties after a Ramos header equaliser.", keyPlayers:['Griezmann','Torres','Koke','Godin','Oblak'] },
-  { id:'psg_2122',    name:'PSG 21/22', attack:95, midfield:84, defence:79, goalkeeper:83, overall:87, bio:"The Messi, Neymar and Mbappé project. On paper the best attack in history — but the team never clicked.", keyPlayers:['Mbappé','Messi','Neymar','Di María','Marquinhos'] },
-  { id:'mancity_2223',name:'Man City 22/23', attack:90, midfield:92, defence:85, goalkeeper:83, overall:89, bio:"Guardiola's treble. Haaland scored 52 goals in his debut season as City dominated English and European football.", keyPlayers:['Haaland','De Bruyne','Foden','Rodri','Gvardiol'] },
-  { id:'ajax_9495',   name:'Ajax 94/95', attack:86, midfield:84, defence:82, goalkeeper:80, overall:84, bio:"Van Gaal's young Ajax won the Champions League, Eredivisie and were packed with future stars.", keyPlayers:['Kluivert','Litmanen','Davids','De Boer','Seedorf'] },
-  { id:'porto_0304',  name:'Porto 03/04', attack:80, midfield:80, defence:81, goalkeeper:78, overall:80, bio:"Mourinho's shock Champions League winners. Porto beat Man United, Lyon and Monaco on their way to glory.", keyPlayers:['Deco','Costinha','McCarthy','Carvalho','Vítor Baía'] },
-  { id:'monaco_1617', name:'Monaco 16/17', attack:88, midfield:83, defence:76, goalkeeper:74, overall:82, bio:"The most exciting team of the decade. Mbappé, Bernardo Silva and Lemar played fearless, attacking football.", keyPlayers:['Mbappé','Falcao','Bernardo Silva','Lemar','Fabinho'] },
-  { id:'napoli_2223', name:'Napoli 22/23', attack:87, midfield:86, defence:81, goalkeeper:82, overall:85, bio:"Spalletti's Napoli won their first Serie A title in 33 years with Osimhen and Kvaratskhelia unstoppable.", keyPlayers:['Osimhen','Kvaratskhelia','Zielinski','Di Lorenzo','Meret'] },
-  { id:'leverkusen_2324',name:'Bayer Leverkusen 23/24', attack:86, midfield:87, defence:82, goalkeeper:79, overall:84, bio:"Xabi Alonso's unbeaten Bundesliga champions. Granit Xhaka reinvented himself; Wirtz was unmatchable.", keyPlayers:['Wirtz','Boniface','Xhaka','Grimaldo','Tah'] },
-  { id:'valencia_0102',name:'Valencia 01/02', attack:82, midfield:81, defence:83, goalkeeper:80, overall:82, bio:"Benítez's Valencia were the surprise of Europe — tough, organised and dangerous on the counter.", keyPlayers:['Carew','Ayala','Baraja','Aimar','Cañizares'] },
-  { id:'acmilan_8889',name:'AC Milan 88/89', attack:84, midfield:83, defence:88, goalkeeper:88, overall:86, bio:"Sacchi's revolutionary AC Milan. The pressing game pioneered by Sacchi made them European champions.", keyPlayers:['Van Basten','Gullit','Rijkaard','Maldini','Baresi'] },
+  { id:'barca_0809',  name:'Barcelona 08/09', attack:94, midfield:91, defence:82, goalkeeper:80, overall:88, era:'00s', bio:"Pep Guardiola's treble-winning side. Xavi and Iniesta controlled the midfield like no team before them.", keyPlayers:['Messi',"Eto'o",'Henry','Xavi','Iniesta'] },
+  { id:'barca_1415',  name:'Barcelona 14/15', attack:97, midfield:88, defence:79, goalkeeper:77, overall:87, era:'10s', bio:"The MSN era. Messi, Suárez and Neymar — the most devastating front three in history. Another treble.", keyPlayers:['Messi','Suárez','Neymar','Iniesta','Busquets'] },
+  { id:'rm_1314',     name:'Real Madrid 13/14', attack:92, midfield:85, defence:80, goalkeeper:82, overall:86, era:'10s', bio:"La Décima. Carlo Ancelotti's side ended a 12-year wait for the Champions League with Ronaldo at his peak.", keyPlayers:['Ronaldo','Bale','Benzema','Di María','Modric'] },
+  { id:'rm_1718',     name:'Real Madrid 17/18', attack:91, midfield:84, defence:81, goalkeeper:85, overall:86, era:'10s', bio:"Three in a row. Zidane's side won their third consecutive Champions League with Ronaldo in unstoppable form.", keyPlayers:['Ronaldo','Benzema','Bale','Modric','Ramos'] },
+  { id:'manutd_9899', name:'Man United 98/99', attack:87, midfield:83, defence:82, goalkeeper:79, overall:83, era:'90s', bio:"Ferguson's Treble winners. Sheringham and Solskjær scored in the dying seconds of the Champions League final.", keyPlayers:['Beckham','Giggs','Scholes','Cole','Yorke'] },
+  { id:'manutd_0708', name:'Man United 07/08', attack:89, midfield:86, defence:80, goalkeeper:83, overall:85, era:'00s', bio:"Ronaldo's best United season — 42 goals. Won the league and Champions League, beating Chelsea on penalties.", keyPlayers:['Ronaldo','Rooney','Tevez','Giggs','Ferdinand'] },
+  { id:'chelsea_1112',name:'Chelsea 11/12', attack:82, midfield:80, defence:86, goalkeeper:87, overall:84, era:'10s', bio:"Di Matteo's miraculous run. Knocked out Napoli, Benfica, Barcelona and Bayern to win the Champions League.", keyPlayers:['Drogba','Lampard','Terry','Čech','Mata'] },
+  { id:'chelsea_2021',name:'Chelsea 20/21', attack:83, midfield:82, defence:84, goalkeeper:83, overall:83, era:'20s', bio:"Tuchel transformed Chelsea from mid-table to Champions League winners in just a few months.", keyPlayers:['Havertz','Mount','Werner','Jorginho','Kanté'] },
+  { id:'liverpool_0405',name:'Liverpool 04/05', attack:82, midfield:80, defence:79, goalkeeper:84, overall:81, era:'00s', bio:"The miracle of Istanbul. 3-0 down at half time to Milan, Liverpool came back to win on penalties.", keyPlayers:['Gerrard','García','Baroš','Carragher','Dudek'] },
+  { id:'liverpool_1819',name:'Liverpool 18/19', attack:90, midfield:85, defence:87, goalkeeper:88, overall:88, era:'10s', bio:"Klopp's warriors lost the league by a point but won the Champions League in Madrid against Spurs.", keyPlayers:['Salah','Mané','Firmino','Van Dijk','Alisson'] },
+  { id:'arsenal_0304', name:'Arsenal 03/04', attack:87, midfield:85, defence:83, goalkeeper:80, overall:85, era:'00s', bio:"The Invincibles. Wenger's side went the entire Premier League season unbeaten — 26 wins, 12 draws.", keyPlayers:['Henry','Bergkamp','Pires','Vieira','Ashley Cole'] },
+  { id:'acmilan_0203', name:'AC Milan 02/03', attack:85, midfield:84, defence:88, goalkeeper:89, overall:87, era:'00s', bio:"Ancelotti's Milan were a defensive fortress. Maldini, Nesta and Buffon's rival Dida shut everyone out.", keyPlayers:['Shevchenko','Kaká','Pirlo','Maldini','Nesta'] },
+  { id:'acmilan_0607', name:'AC Milan 06/07', attack:87, midfield:82, defence:86, goalkeeper:87, overall:86, era:'00s', bio:"Milan avenged Istanbul by beating Liverpool 2-1 in Athens. Kaká was the best player in the world.", keyPlayers:['Kaká','Inzaghi','Seedorf','Pirlo','Maldini'] },
+  { id:'inter_0910',  name:'Inter Milan 09/10', attack:86, midfield:84, defence:86, goalkeeper:82, overall:85, era:'00s', bio:"Mourinho's impossible treble. Inter beat Barça and Bayern to win Serie A, Coppa Italia and Champions League.", keyPlayers:['Milito',"Eto'o",'Sneijder','Zanetti','Cambiasso'] },
+  { id:'juve_1415',   name:'Juventus 14/15', attack:83, midfield:84, defence:88, goalkeeper:85, overall:86, era:'10s', bio:"Allegri's Juve reached the Champions League final with one of the best defences in Italian history.", keyPlayers:['Tevez','Pirlo','Pogba','Vidal','Bonucci'] },
+  { id:'juve_1617',   name:'Juventus 16/17', attack:87, midfield:83, defence:87, goalkeeper:84, overall:86, era:'10s', bio:"With Higuaín signing, Juve dominated Serie A. Lost the CL final to Real Madrid after a stunning run.", keyPlayers:['Higuaín','Dybala','Mandzukić','Bonucci','Buffon'] },
+  { id:'bayern_1213', name:'Bayern Munich 12/13', attack:90, midfield:88, defence:85, goalkeeper:86, overall:88, era:'10s', bio:"Jupp Heynckes' treble. Bayern demolished opponents all season — the most dominant German side ever.", keyPlayers:['Robben','Ribéry','Müller','Schweinsteiger','Neuer'] },
+  { id:'bayern_1920', name:'Bayern Munich 19/20', attack:93, midfield:88, defence:84, goalkeeper:87, overall:89, era:'10s', bio:"Flick's Bayern won 11 straight in the Champions League. Lewandowski scored 55 goals in all competitions.", keyPlayers:['Lewandowski','Gnabry','Müller','Kimmich','Neuer'] },
+  { id:'bvb_1112',    name:'Borussia Dortmund 11/12', attack:87, midfield:85, defence:80, goalkeeper:78, overall:84, era:'10s', bio:"Klopp's young Dortmund were electrifying. Reus, Götze and Lewandowski lit up the Bundesliga.", keyPlayers:['Lewandowski','Götze','Reus','Hummels','Weidenfeller'] },
+  { id:'atletico_1314',name:'Atletico Madrid 13/14', attack:80, midfield:81, defence:90, goalkeeper:85, overall:84, era:'10s', bio:"Simeone's warriors won La Liga and reached the CL final. Oblak's wall conceded almost nothing.", keyPlayers:['Diego Costa','Villa','David Villa','Koke','Godin'] },
+  { id:'atletico_1516',name:'Atletico Madrid 15/16', attack:79, midfield:80, defence:91, goalkeeper:84, overall:84, era:'10s', bio:"Atlético reached the CL final again, losing to Real Madrid on penalties after a Ramos header equaliser.", keyPlayers:['Griezmann','Torres','Koke','Godin','Oblak'] },
+  { id:'psg_2122',    name:'PSG 21/22', attack:95, midfield:84, defence:79, goalkeeper:83, overall:87, era:'20s', bio:"The Messi, Neymar and Mbappé project. On paper the best attack in history — but the team never clicked.", keyPlayers:['Mbappé','Messi','Neymar','Di María','Marquinhos'] },
+  { id:'mancity_2223',name:'Man City 22/23', attack:90, midfield:92, defence:85, goalkeeper:83, overall:89, era:'20s', bio:"Guardiola's treble. Haaland scored 52 goals in his debut season as City dominated English and European football.", keyPlayers:['Haaland','De Bruyne','Foden','Rodri','Gvardiol'] },
+  { id:'ajax_9495',   name:'Ajax 94/95', attack:86, midfield:84, defence:82, goalkeeper:80, overall:84, era:'90s', bio:"Van Gaal's young Ajax won the Champions League, Eredivisie and were packed with future stars.", keyPlayers:['Kluivert','Litmanen','Davids','De Boer','Seedorf'] },
+  { id:'porto_0304',  name:'Porto 03/04', attack:80, midfield:80, defence:81, goalkeeper:78, overall:80, era:'00s', bio:"Mourinho's shock Champions League winners. Porto beat Man United, Lyon and Monaco on their way to glory.", keyPlayers:['Deco','Costinha','McCarthy','Carvalho','Vítor Baía'] },
+  { id:'monaco_1617', name:'Monaco 16/17', attack:88, midfield:83, defence:76, goalkeeper:74, overall:82, era:'10s', bio:"The most exciting team of the decade. Mbappé, Bernardo Silva and Lemar played fearless, attacking football.", keyPlayers:['Mbappé','Falcao','Bernardo Silva','Lemar','Fabinho'] },
+  { id:'napoli_2223', name:'Napoli 22/23', attack:87, midfield:86, defence:81, goalkeeper:82, overall:85, era:'20s', bio:"Spalletti's Napoli won their first Serie A title in 33 years with Osimhen and Kvaratskhelia unstoppable.", keyPlayers:['Osimhen','Kvaratskhelia','Zielinski','Di Lorenzo','Meret'] },
+  { id:'leverkusen_2324',name:'Bayer Leverkusen 23/24', attack:86, midfield:87, defence:82, goalkeeper:79, overall:84, era:'20s', bio:"Xabi Alonso's unbeaten Bundesliga champions. Granit Xhaka reinvented himself; Wirtz was unmatchable.", keyPlayers:['Wirtz','Boniface','Xhaka','Grimaldo','Tah'] },
+  { id:'valencia_0102',name:'Valencia 01/02', attack:82, midfield:81, defence:83, goalkeeper:80, overall:82, era:'00s', bio:"Benítez's Valencia were the surprise of Europe — tough, organised and dangerous on the counter.", keyPlayers:['Carew','Ayala','Baraja','Aimar','Cañizares'] },
+  { id:'acmilan_8889',name:'AC Milan 88/89', attack:84, midfield:83, defence:88, goalkeeper:88, overall:86, era:'90s', bio:"Sacchi's revolutionary AC Milan. The pressing game pioneered by Sacchi made them European champions.", keyPlayers:['Van Basten','Gullit','Rijkaard','Maldini','Baresi'] },
+  { id:'acmilan_9394',name:'AC Milan 93/94', attack:88, midfield:85, defence:90, goalkeeper:86, overall:87, era:'90s', bio:"Capello's Milan crushed Barcelona 4-0 in the final. The defence of Maldini, Baresi and Costacurta was untouchable.", keyPlayers:["Savicevic","Maldini","Baresi","Desailly","Boban"] },
+  { id:'barca_9192',name:'Barcelona 91/92', attack:87, midfield:86, defence:83, goalkeeper:82, overall:85, era:'90s', bio:"Cruyff's Dream Team won Barça's first European Cup, beating Sampdoria with Koeman's free-kick at Wembley.", keyPlayers:["Stoichkov","Koeman","Laudrup","Guardiola","Zubizarreta"] },
+  { id:'marseille_9293',name:'Marseille 92/93', attack:85, midfield:83, defence:82, goalkeeper:79, overall:83, era:'90s', bio:"France's only European Cup winners. Deschamps and Boli led a gritty, talented Marseille past AC Milan in Munich.", keyPlayers:["Deschamps","Boli","Desailly","Voller","Abedi Pele"] },
+  { id:'juve_9596',name:'Juventus 95/96', attack:86, midfield:85, defence:86, goalkeeper:83, overall:85, era:'90s', bio:"Lippi's Juve beat Ajax on penalties. Del Piero emerged as a superstar alongside veterans like Vialli.", keyPlayers:["Del Piero","Vialli","Ravanelli","Conte","Peruzzi"] },
+  { id:'bvb_9697',name:'Borussia Dortmund 96/97', attack:84, midfield:83, defence:84, goalkeeper:82, overall:83, era:'90s', bio:"Hitzfeld's Dortmund stunned Juventus 3-1 in the final, with Riedle scoring twice and Lars Ricken adding a famous lob.", keyPlayers:["Möller","Riedle","Sammer","Kohler","Ricken"] },
+  { id:'rm_9798',name:'Real Madrid 97/98', attack:85, midfield:82, defence:84, goalkeeper:83, overall:84, era:'90s', bio:"La Septima. Madrid ended a 32-year wait for the European Cup behind Predrag Mijatović's winner in Amsterdam.", keyPlayers:["Mijatovic","Raul","Redondo","Seedorf","Hierro"] },
+  { id:'redstar_9091',name:'Red Star Belgrade 90/91', attack:83, midfield:84, defence:81, goalkeeper:78, overall:82, era:'90s', bio:"Yugoslavia's golden generation won the European Cup on penalties against Marseille, built on a wonderful midfield.", keyPlayers:["Prosinecki","Savicevic","Mihajlovic","Stojkovic","Pancev"] },
+  { id:'inter_9798',name:'Inter Milan 97/98', attack:85, midfield:82, defence:83, goalkeeper:81, overall:83, era:'90s', bio:"Ronaldo's only full season at Inter — 34 goals and a UEFA Cup, with Simeone and Zamorano alongside him.", keyPlayers:["Ronaldo","Zamorano","Simeone","Djorkaeff","Pagliuca"] },
+  { id:'bayern_9697',name:'Bayern Munich 96/97', attack:83, midfield:82, defence:85, goalkeeper:83, overall:83, era:'90s', bio:"Klinsmann's Bayern won the UEFA Cup with a backbone of German internationals and a young Mehmet Scholl.", keyPlayers:["Klinsmann","Scholl","Matthäus","Kahn","Helmer"] },
+  { id:'parma_9495',name:'Parma 94/95', attack:82, midfield:81, defence:82, goalkeeper:84, overall:82, era:'90s', bio:"A tiny club punching massively above its weight — Zola, Asprilla and Buffon's Parma terrorised Serie A.", keyPlayers:["Zola","Asprilla","Buffon","Crippa","Minotti"] },
+  { id:'sampdoria_9192',name:'Sampdoria 91/92', attack:83, midfield:81, defence:80, goalkeeper:79, overall:81, era:'90s', bio:"Vialli and Mancini's 'goal twins' fired Sampdoria to a Scudetto and a European Cup final against Barcelona.", keyPlayers:["Vialli","Mancini","Vierchowod","Pagliuca","Lombardo"] },
+  { id:'barca_9394',name:'Barcelona 93/94', attack:86, midfield:85, defence:81, goalkeeper:80, overall:84, era:'90s', bio:"The Dream Team's last great run — Romario's arrival and a 5-0 demolition of Real Madrid, El Tel's masterpiece.", keyPlayers:["Romario","Stoichkov","Guardiola","Koeman","Bakero"] },
+  { id:'rm_0102',name:'Real Madrid 01/02', attack:90, midfield:88, defence:84, goalkeeper:84, overall:87, era:'00s', bio:"La Novena. Zidane's volley in Glasgow remains one of the greatest Champions League final goals ever scored.", keyPlayers:["Zidane","Figo","Raul","Roberto Carlos","Casillas"] },
+  { id:'acmilan_0405',name:'AC Milan 04/05', attack:87, midfield:88, defence:88, goalkeeper:85, overall:87, era:'00s', bio:"Ancelotti's Milan dominated Liverpool 3-0 at half-time in Istanbul before the most famous collapse in final history.", keyPlayers:["Kaka","Shevchenko","Pirlo","Nesta","Maldini"] },
+  { id:'liverpool_0001',name:'Liverpool 00/01', attack:84, midfield:83, defence:83, goalkeeper:82, overall:83, era:'00s', bio:"Houllier's treble winners — FA Cup, League Cup and UEFA Cup, capped by a thrilling 5-4 win over Alavés.", keyPlayers:["Owen","Gerrard","Heskey","Hyypia","Westerveld"] },
+  { id:'chelsea_0405',name:'Chelsea 04/05', attack:85, midfield:86, defence:90, goalkeeper:86, overall:87, era:'00s', bio:"Mourinho's first Premier League title in England — a defensive juggernaut conceding just 15 goals all season.", keyPlayers:["Lampard","Terry","Cech","Drogba","Makelele"] },
+  { id:'depor_0304',name:'Deportivo La Coruña 03/04', attack:82, midfield:81, defence:80, goalkeeper:79, overall:80, era:'00s', bio:"The 'Super Depor' staged the greatest Champions League comeback ever, beating Milan 4-0 after losing the first leg 4-1.", keyPlayers:["Valeron","Tristan","Pandiani","Naybet","Molina"] },
+  { id:'bayern_0001',name:'Bayern Munich 00/01', attack:83, midfield:82, defence:85, goalkeeper:87, overall:84, era:'00s', bio:"Kahn's heroics in the penalty shootout won Bayern their first European Cup in 25 years against Valencia.", keyPlayers:["Kahn","Effenberg","Elber","Lizarazu","Scholl"] },
+  { id:'psg_1516',name:'PSG 15/16', attack:89, midfield:85, defence:84, goalkeeper:82, overall:85, era:'10s', bio:"Ibrahimović's peak PSG won every domestic trophy available, scoring an astonishing 50 goals in all competitions.", keyPlayers:["Ibrahimovic","Cavani","Verratti","Thiago Silva","Di Maria"] },
+  { id:'liverpool_1718',name:'Liverpool 17/18', attack:90, midfield:84, defence:79, goalkeeper:77, overall:84, era:'10s', bio:"Klopp's front three of Salah, Mané and Firmino ran riot all the way to the Champions League final in Kyiv.", keyPlayers:["Salah","Mane","Firmino","Van Dijk","Henderson"] },
+  { id:'rm_2122',name:'Real Madrid 21/22', attack:87, midfield:85, defence:85, goalkeeper:88, overall:86, era:'20s', bio:"Ancelotti's Madrid won an improbable Champions League fuelled by Courtois heroics and Benzema's brilliance.", keyPlayers:["Benzema","Modric","Courtois","Kroos","Vinicius"] },
+  { id:'liverpool_2122',name:'Liverpool 21/22', attack:89, midfield:86, defence:85, goalkeeper:85, overall:87, era:'20s', bio:"Klopp's quadruple-chasing side won both domestic cups and reached the Champions League final, agonisingly close to history.", keyPlayers:["Salah","Van Dijk","Alisson","Trent","Mane"] },
+  { id:'mancity_2324',name:'Man City 23/24', attack:91, midfield:90, defence:87, goalkeeper:85, overall:90, era:'20s', bio:"Guardiola's fourth straight Premier League title — relentless control through Rodri and a rampant Haaland up top.", keyPlayers:["Haaland","De Bruyne","Rodri","Foden","Ederson"] },
+  { id:'rm_2324',name:'Real Madrid 23/24', attack:90, midfield:89, defence:86, goalkeeper:87, overall:89, era:'20s', bio:"Bellingham's stunning debut season for Madrid powered them to another La Liga and Champions League double.", keyPlayers:["Bellingham","Vinicius","Modric","Rudiger","Courtois"] },
+  { id:'psg_1920',name:'PSG 19/20', attack:89, midfield:86, defence:83, goalkeeper:82, overall:86, era:'20s', bio:"Tuchel's PSG reached their first Champions League final, with Mbappé and Neymar terrorising Europe's best defences.", keyPlayers:["Mbappe","Neymar","Di Maria","Marquinhos","Verratti"] },
+  { id:'bayern_2223',name:'Bayern Munich 22/23', attack:88, midfield:86, defence:84, goalkeeper:87, overall:87, era:'20s', bio:"An eleventh straight Bundesliga title, won on the final day, with Kimmich orchestrating from deep all season.", keyPlayers:["Kimmich","Musiala","Neuer","Sane","Gnabry"] },
+  { id:'inter_2223',name:'Inter Milan 22/23', attack:85, midfield:84, defence:87, goalkeeper:84, overall:85, era:'20s', bio:"Inzaghi's Inter reached the Champions League final against Man City, built on a rock-solid back three.", keyPlayers:["Lautaro Martinez","Barella","Bastoni","Brozovic","Onana"] },
+  { id:'atletico_2021',name:'Atletico Madrid 20/21', attack:84, midfield:83, defence:88, goalkeeper:85, overall:85, era:'20s', bio:"Simeone's Atlético snapped Madrid and Barça's duopoly, with Suárez rediscovering his finishing touch.", keyPlayers:["Suarez","Koke","Oblak","Felipe","Llorente"] },
+  { id:'bvb_2324',name:'Borussia Dortmund 23/24', attack:84, midfield:83, defence:81, goalkeeper:80, overall:82, era:'20s', bio:"An unexpected run to the Champions League final, undone late by Real Madrid despite a battling display at Wembley.", keyPlayers:["Fullkrug","Sancho","Hummels","Sabitzer","Kobel"] },
+  { id:'mancity_2021',name:'Man City 20/21', attack:87, midfield:88, defence:86, goalkeeper:83, overall:87, era:'20s', bio:"City reached their first ever Champions League final, controlling games with a false-nine De Bruyne system.", keyPlayers:["De Bruyne","Sterling","Ederson","Dias","Foden"] },
 ];
 
 /* ═══════════════════════════════════════════
    PLAYER DATABASE — inserted by step 2
 ═══════════════════════════════════════════ */
 const PLAYERS = [
+{id:'acmilan_9394_0',name:"Savicevic",team:"AC Milan",season:'1993/94',position:'CAM',altPositions:[],rating:89,tier:'Elite'},
+{id:'acmilan_9394_1',name:"Maldini",team:"AC Milan",season:'1993/94',position:'LB',altPositions:[],rating:90,tier:'Legend'},
+{id:'acmilan_9394_2',name:"Baresi",team:"AC Milan",season:'1993/94',position:'CB',altPositions:[],rating:91,tier:'Legend'},
+{id:'acmilan_9394_3',name:"Desailly",team:"AC Milan",season:'1993/94',position:'CDM',altPositions:[],rating:88,tier:'Elite'},
+{id:'acmilan_9394_4',name:"Boban",team:"AC Milan",season:'1993/94',position:'CM',altPositions:[],rating:85,tier:'Elite'},
+{id:'acmilan_9394_5',name:"Rossi",team:"AC Milan",season:'1993/94',position:'GK',altPositions:[],rating:84,tier:'Elite'},
+{id:'acmilan_9394_6',name:"Massaro",team:"AC Milan",season:'1993/94',position:'ST',altPositions:[],rating:84,tier:'Elite'},
+{id:'acmilan_9394_f1',name:"Martins",team:"AC Milan",season:'1993/94',position:'CB',altPositions:[],rating:78,tier:'Starter'},
+{id:'acmilan_9394_f2',name:"Costa",team:"AC Milan",season:'1993/94',position:'RB',altPositions:[],rating:81,tier:'Starter'},
+{id:'acmilan_9394_f3',name:"Silva",team:"AC Milan",season:'1993/94',position:'LW',altPositions:[],rating:80,tier:'Starter'},
+{id:'acmilan_9394_f4',name:"Novak",team:"AC Milan",season:'1993/94',position:'RW',altPositions:[],rating:81,tier:'Starter'},
+{id:'barca_9192_0',name:"Stoichkov",team:"Barcelona",season:'1991/92',position:'RW',altPositions:[],rating:88,tier:'Elite'},
+{id:'barca_9192_1',name:"Koeman",team:"Barcelona",season:'1991/92',position:'CB',altPositions:[],rating:86,tier:'Elite'},
+{id:'barca_9192_2',name:"Laudrup",team:"Barcelona",season:'1991/92',position:'CAM',altPositions:[],rating:87,tier:'Elite'},
+{id:'barca_9192_3',name:"Guardiola",team:"Barcelona",season:'1991/92',position:'CDM',altPositions:[],rating:84,tier:'Elite'},
+{id:'barca_9192_4',name:"Zubizarreta",team:"Barcelona",season:'1991/92',position:'GK',altPositions:[],rating:84,tier:'Elite'},
+{id:'barca_9192_5',name:"Bakero",team:"Barcelona",season:'1991/92',position:'CM',altPositions:[],rating:83,tier:'Starter'},
+{id:'barca_9192_f1',name:"Martins",team:"Barcelona",season:'1991/92',position:'CB',altPositions:[],rating:78,tier:'Starter'},
+{id:'barca_9192_f2',name:"Costa",team:"Barcelona",season:'1991/92',position:'LB',altPositions:[],rating:78,tier:'Starter'},
+{id:'barca_9192_f3',name:"Silva",team:"Barcelona",season:'1991/92',position:'RB',altPositions:[],rating:78,tier:'Starter'},
+{id:'barca_9192_f4',name:"Novak",team:"Barcelona",season:'1991/92',position:'LW',altPositions:[],rating:79,tier:'Starter'},
+{id:'barca_9192_f5',name:"Keller",team:"Barcelona",season:'1991/92',position:'ST',altPositions:[],rating:76,tier:'Starter'},
+{id:'marseille_9293_0',name:"Deschamps",team:"Marseille",season:'1992/93',position:'CDM',altPositions:[],rating:85,tier:'Elite'},
+{id:'marseille_9293_1',name:"Boli",team:"Marseille",season:'1992/93',position:'CB',altPositions:[],rating:85,tier:'Elite'},
+{id:'marseille_9293_2',name:"Desailly",team:"Marseille",season:'1992/93',position:'CB',altPositions:[],rating:86,tier:'Elite'},
+{id:'marseille_9293_3',name:"Voller",team:"Marseille",season:'1992/93',position:'ST',altPositions:[],rating:85,tier:'Elite'},
+{id:'marseille_9293_4',name:"Abedi Pele",team:"Marseille",season:'1992/93',position:'LW',altPositions:[],rating:86,tier:'Elite'},
+{id:'marseille_9293_f1',name:"Martins",team:"Marseille",season:'1992/93',position:'GK',altPositions:[],rating:76,tier:'Starter'},
+{id:'marseille_9293_f2',name:"Costa",team:"Marseille",season:'1992/93',position:'LB',altPositions:[],rating:77,tier:'Starter'},
+{id:'marseille_9293_f3',name:"Silva",team:"Marseille",season:'1992/93',position:'RB',altPositions:[],rating:77,tier:'Starter'},
+{id:'marseille_9293_f4',name:"Novak",team:"Marseille",season:'1992/93',position:'CM',altPositions:[],rating:76,tier:'Starter'},
+{id:'marseille_9293_f5',name:"Keller",team:"Marseille",season:'1992/93',position:'CAM',altPositions:[],rating:76,tier:'Starter'},
+{id:'marseille_9293_f6',name:"Hayes",team:"Marseille",season:'1992/93',position:'RW',altPositions:[],rating:77,tier:'Starter'},
+{id:'juve_9596_0',name:"Del Piero",team:"Juventus",season:'1995/96',position:'CAM',altPositions:[],rating:88,tier:'Elite'},
+{id:'juve_9596_1',name:"Vialli",team:"Juventus",season:'1995/96',position:'ST',altPositions:[],rating:85,tier:'Elite'},
+{id:'juve_9596_2',name:"Ravanelli",team:"Juventus",season:'1995/96',position:'ST',altPositions:[],rating:85,tier:'Elite'},
+{id:'juve_9596_3',name:"Conte",team:"Juventus",season:'1995/96',position:'CM',altPositions:[],rating:83,tier:'Starter'},
+{id:'juve_9596_4',name:"Peruzzi",team:"Juventus",season:'1995/96',position:'GK',altPositions:[],rating:84,tier:'Elite'},
+{id:'juve_9596_f1',name:"Martins",team:"Juventus",season:'1995/96',position:'CB',altPositions:[],rating:79,tier:'Starter'},
+{id:'juve_9596_f2',name:"Costa",team:"Juventus",season:'1995/96',position:'CB',altPositions:[],rating:76,tier:'Starter'},
+{id:'juve_9596_f3',name:"Silva",team:"Juventus",season:'1995/96',position:'LB',altPositions:[],rating:79,tier:'Starter'},
+{id:'juve_9596_f4',name:"Novak",team:"Juventus",season:'1995/96',position:'RB',altPositions:[],rating:79,tier:'Starter'},
+{id:'juve_9596_f5',name:"Keller",team:"Juventus",season:'1995/96',position:'CDM',altPositions:[],rating:76,tier:'Starter'},
+{id:'juve_9596_f6',name:"Hayes",team:"Juventus",season:'1995/96',position:'LW',altPositions:[],rating:77,tier:'Starter'},
+{id:'juve_9596_f7',name:"Brunet",team:"Juventus",season:'1995/96',position:'RW',altPositions:[],rating:76,tier:'Starter'},
+{id:'bvb_9697_0',name:"Möller",team:"Borussia Dortmund",season:'1996/97',position:'CAM',altPositions:[],rating:85,tier:'Elite'},
+{id:'bvb_9697_1',name:"Riedle",team:"Borussia Dortmund",season:'1996/97',position:'ST',altPositions:[],rating:84,tier:'Elite'},
+{id:'bvb_9697_2',name:"Sammer",team:"Borussia Dortmund",season:'1996/97',position:'CB',altPositions:[],rating:87,tier:'Elite'},
+{id:'bvb_9697_3',name:"Kohler",team:"Borussia Dortmund",season:'1996/97',position:'CB',altPositions:[],rating:84,tier:'Elite'},
+{id:'bvb_9697_4',name:"Ricken",team:"Borussia Dortmund",season:'1996/97',position:'LW',altPositions:[],rating:81,tier:'Starter'},
+{id:'bvb_9697_f1',name:"Martins",team:"Borussia Dortmund",season:'1996/97',position:'GK',altPositions:[],rating:74,tier:'Rotation'},
+{id:'bvb_9697_f2',name:"Costa",team:"Borussia Dortmund",season:'1996/97',position:'LB',altPositions:[],rating:74,tier:'Rotation'},
+{id:'bvb_9697_f3',name:"Silva",team:"Borussia Dortmund",season:'1996/97',position:'RB',altPositions:[],rating:76,tier:'Starter'},
+{id:'bvb_9697_f4',name:"Novak",team:"Borussia Dortmund",season:'1996/97',position:'CDM',altPositions:[],rating:77,tier:'Starter'},
+{id:'bvb_9697_f5',name:"Keller",team:"Borussia Dortmund",season:'1996/97',position:'CM',altPositions:[],rating:75,tier:'Rotation'},
+{id:'bvb_9697_f6',name:"Hayes",team:"Borussia Dortmund",season:'1996/97',position:'RW',altPositions:[],rating:76,tier:'Starter'},
+{id:'rm_9798_0',name:"Mijatovic",team:"Real Madrid",season:'1997/98',position:'ST',altPositions:[],rating:86,tier:'Elite'},
+{id:'rm_9798_1',name:"Raul",team:"Real Madrid",season:'1997/98',position:'ST',altPositions:[],rating:87,tier:'Elite'},
+{id:'rm_9798_2',name:"Redondo",team:"Real Madrid",season:'1997/98',position:'CDM',altPositions:[],rating:87,tier:'Elite'},
+{id:'rm_9798_3',name:"Seedorf",team:"Real Madrid",season:'1997/98',position:'CM',altPositions:[],rating:85,tier:'Elite'},
+{id:'rm_9798_4',name:"Hierro",team:"Real Madrid",season:'1997/98',position:'CB',altPositions:[],rating:86,tier:'Elite'},
+{id:'rm_9798_f1',name:"Martins",team:"Real Madrid",season:'1997/98',position:'GK',altPositions:[],rating:76,tier:'Starter'},
+{id:'rm_9798_f2',name:"Costa",team:"Real Madrid",season:'1997/98',position:'CB',altPositions:[],rating:78,tier:'Starter'},
+{id:'rm_9798_f3',name:"Silva",team:"Real Madrid",season:'1997/98',position:'LB',altPositions:[],rating:75,tier:'Rotation'},
+{id:'rm_9798_f4',name:"Novak",team:"Real Madrid",season:'1997/98',position:'RB',altPositions:[],rating:75,tier:'Rotation'},
+{id:'rm_9798_f5',name:"Keller",team:"Real Madrid",season:'1997/98',position:'CAM',altPositions:[],rating:75,tier:'Rotation'},
+{id:'rm_9798_f6',name:"Hayes",team:"Real Madrid",season:'1997/98',position:'LW',altPositions:[],rating:75,tier:'Rotation'},
+{id:'rm_9798_f7',name:"Brunet",team:"Real Madrid",season:'1997/98',position:'RW',altPositions:[],rating:75,tier:'Rotation'},
+{id:'redstar_9091_0',name:"Prosinecki",team:"Red Star Belgrade",season:'1990/91',position:'CM',altPositions:[],rating:86,tier:'Elite'},
+{id:'redstar_9091_1',name:"Savicevic",team:"Red Star Belgrade",season:'1990/91',position:'CAM',altPositions:[],rating:87,tier:'Elite'},
+{id:'redstar_9091_2',name:"Mihajlovic",team:"Red Star Belgrade",season:'1990/91',position:'CB',altPositions:[],rating:83,tier:'Starter'},
+{id:'redstar_9091_3',name:"Stojkovic",team:"Red Star Belgrade",season:'1990/91',position:'CAM',altPositions:[],rating:84,tier:'Elite'},
+{id:'redstar_9091_4',name:"Pancev",team:"Red Star Belgrade",season:'1990/91',position:'ST',altPositions:[],rating:85,tier:'Elite'},
+{id:'redstar_9091_f1',name:"Martins",team:"Red Star Belgrade",season:'1990/91',position:'GK',altPositions:[],rating:75,tier:'Rotation'},
+{id:'redstar_9091_f2',name:"Costa",team:"Red Star Belgrade",season:'1990/91',position:'CB',altPositions:[],rating:74,tier:'Rotation'},
+{id:'redstar_9091_f3',name:"Silva",team:"Red Star Belgrade",season:'1990/91',position:'LB',altPositions:[],rating:75,tier:'Rotation'},
+{id:'redstar_9091_f4',name:"Novak",team:"Red Star Belgrade",season:'1990/91',position:'RB',altPositions:[],rating:75,tier:'Rotation'},
+{id:'redstar_9091_f5',name:"Keller",team:"Red Star Belgrade",season:'1990/91',position:'CDM',altPositions:[],rating:74,tier:'Rotation'},
+{id:'redstar_9091_f6',name:"Hayes",team:"Red Star Belgrade",season:'1990/91',position:'LW',altPositions:[],rating:75,tier:'Rotation'},
+{id:'redstar_9091_f7',name:"Brunet",team:"Red Star Belgrade",season:'1990/91',position:'RW',altPositions:[],rating:73,tier:'Rotation'},
+{id:'inter_9798_0',name:"Ronaldo",team:"Inter Milan",season:'1997/98',position:'ST',altPositions:[],rating:93,tier:'Legend'},
+{id:'inter_9798_1',name:"Zamorano",team:"Inter Milan",season:'1997/98',position:'ST',altPositions:[],rating:84,tier:'Elite'},
+{id:'inter_9798_2',name:"Simeone",team:"Inter Milan",season:'1997/98',position:'CM',altPositions:[],rating:83,tier:'Starter'},
+{id:'inter_9798_3',name:"Djorkaeff",team:"Inter Milan",season:'1997/98',position:'CAM',altPositions:[],rating:85,tier:'Elite'},
+{id:'inter_9798_4',name:"Pagliuca",team:"Inter Milan",season:'1997/98',position:'GK',altPositions:[],rating:82,tier:'Starter'},
+{id:'inter_9798_f1',name:"Martins",team:"Inter Milan",season:'1997/98',position:'CB',altPositions:[],rating:76,tier:'Starter'},
+{id:'inter_9798_f2',name:"Costa",team:"Inter Milan",season:'1997/98',position:'CB',altPositions:[],rating:77,tier:'Starter'},
+{id:'inter_9798_f3',name:"Silva",team:"Inter Milan",season:'1997/98',position:'LB',altPositions:[],rating:77,tier:'Starter'},
+{id:'inter_9798_f4',name:"Novak",team:"Inter Milan",season:'1997/98',position:'RB',altPositions:[],rating:76,tier:'Starter'},
+{id:'inter_9798_f5',name:"Keller",team:"Inter Milan",season:'1997/98',position:'CDM',altPositions:[],rating:75,tier:'Rotation'},
+{id:'inter_9798_f6',name:"Hayes",team:"Inter Milan",season:'1997/98',position:'LW',altPositions:[],rating:76,tier:'Starter'},
+{id:'inter_9798_f7',name:"Brunet",team:"Inter Milan",season:'1997/98',position:'RW',altPositions:[],rating:76,tier:'Starter'},
+{id:'bayern_9697_0',name:"Klinsmann",team:"Bayern Munich",season:'1996/97',position:'ST',altPositions:[],rating:87,tier:'Elite'},
+{id:'bayern_9697_1',name:"Scholl",team:"Bayern Munich",season:'1996/97',position:'CAM',altPositions:[],rating:84,tier:'Elite'},
+{id:'bayern_9697_2',name:"Matthäus",team:"Bayern Munich",season:'1996/97',position:'CDM',altPositions:[],rating:85,tier:'Elite'},
+{id:'bayern_9697_3',name:"Kahn",team:"Bayern Munich",season:'1996/97',position:'GK',altPositions:[],rating:88,tier:'Elite'},
+{id:'bayern_9697_4',name:"Helmer",team:"Bayern Munich",season:'1996/97',position:'CB',altPositions:[],rating:83,tier:'Starter'},
+{id:'bayern_9697_f1',name:"Martins",team:"Bayern Munich",season:'1996/97',position:'CB',altPositions:[],rating:75,tier:'Rotation'},
+{id:'bayern_9697_f2',name:"Costa",team:"Bayern Munich",season:'1996/97',position:'LB',altPositions:[],rating:74,tier:'Rotation'},
+{id:'bayern_9697_f3',name:"Silva",team:"Bayern Munich",season:'1996/97',position:'RB',altPositions:[],rating:77,tier:'Starter'},
+{id:'bayern_9697_f4',name:"Novak",team:"Bayern Munich",season:'1996/97',position:'CM',altPositions:[],rating:74,tier:'Rotation'},
+{id:'bayern_9697_f5',name:"Keller",team:"Bayern Munich",season:'1996/97',position:'LW',altPositions:[],rating:74,tier:'Rotation'},
+{id:'bayern_9697_f6',name:"Hayes",team:"Bayern Munich",season:'1996/97',position:'RW',altPositions:[],rating:74,tier:'Rotation'},
+{id:'parma_9495_0',name:"Zola",team:"Parma",season:'1994/95',position:'CAM',altPositions:[],rating:87,tier:'Elite'},
+{id:'parma_9495_1',name:"Asprilla",team:"Parma",season:'1994/95',position:'ST',altPositions:[],rating:85,tier:'Elite'},
+{id:'parma_9495_2',name:"Buffon",team:"Parma",season:'1994/95',position:'GK',altPositions:[],rating:84,tier:'Elite'},
+{id:'parma_9495_3',name:"Crippa",team:"Parma",season:'1994/95',position:'CM',altPositions:[],rating:80,tier:'Starter'},
+{id:'parma_9495_4',name:"Minotti",team:"Parma",season:'1994/95',position:'CB',altPositions:[],rating:79,tier:'Starter'},
+{id:'parma_9495_f1',name:"Martins",team:"Parma",season:'1994/95',position:'CB',altPositions:[],rating:75,tier:'Rotation'},
+{id:'parma_9495_f2',name:"Costa",team:"Parma",season:'1994/95',position:'LB',altPositions:[],rating:75,tier:'Rotation'},
+{id:'parma_9495_f3',name:"Silva",team:"Parma",season:'1994/95',position:'RB',altPositions:[],rating:73,tier:'Rotation'},
+{id:'parma_9495_f4',name:"Novak",team:"Parma",season:'1994/95',position:'CDM',altPositions:[],rating:74,tier:'Rotation'},
+{id:'parma_9495_f5',name:"Keller",team:"Parma",season:'1994/95',position:'LW',altPositions:[],rating:76,tier:'Starter'},
+{id:'parma_9495_f6',name:"Hayes",team:"Parma",season:'1994/95',position:'RW',altPositions:[],rating:76,tier:'Starter'},
+{id:'sampdoria_9192_0',name:"Vialli",team:"Sampdoria",season:'1991/92',position:'ST',altPositions:[],rating:86,tier:'Elite'},
+{id:'sampdoria_9192_1',name:"Mancini",team:"Sampdoria",season:'1991/92',position:'CAM',altPositions:[],rating:85,tier:'Elite'},
+{id:'sampdoria_9192_2',name:"Vierchowod",team:"Sampdoria",season:'1991/92',position:'CB',altPositions:[],rating:83,tier:'Starter'},
+{id:'sampdoria_9192_3',name:"Pagliuca",team:"Sampdoria",season:'1991/92',position:'GK',altPositions:[],rating:81,tier:'Starter'},
+{id:'sampdoria_9192_4',name:"Lombardo",team:"Sampdoria",season:'1991/92',position:'RW',altPositions:[],rating:80,tier:'Starter'},
+{id:'sampdoria_9192_f1',name:"Martins",team:"Sampdoria",season:'1991/92',position:'CB',altPositions:[],rating:75,tier:'Rotation'},
+{id:'sampdoria_9192_f2',name:"Costa",team:"Sampdoria",season:'1991/92',position:'LB',altPositions:[],rating:72,tier:'Rotation'},
+{id:'sampdoria_9192_f3',name:"Silva",team:"Sampdoria",season:'1991/92',position:'RB',altPositions:[],rating:72,tier:'Rotation'},
+{id:'sampdoria_9192_f4',name:"Novak",team:"Sampdoria",season:'1991/92',position:'CDM',altPositions:[],rating:74,tier:'Rotation'},
+{id:'sampdoria_9192_f5',name:"Keller",team:"Sampdoria",season:'1991/92',position:'CM',altPositions:[],rating:74,tier:'Rotation'},
+{id:'sampdoria_9192_f6',name:"Hayes",team:"Sampdoria",season:'1991/92',position:'LW',altPositions:[],rating:73,tier:'Rotation'},
+{id:'barca_9394_0',name:"Romario",team:"Barcelona",season:'1993/94',position:'ST',altPositions:[],rating:90,tier:'Legend'},
+{id:'barca_9394_1',name:"Stoichkov",team:"Barcelona",season:'1993/94',position:'RW',altPositions:[],rating:88,tier:'Elite'},
+{id:'barca_9394_2',name:"Guardiola",team:"Barcelona",season:'1993/94',position:'CDM',altPositions:[],rating:85,tier:'Elite'},
+{id:'barca_9394_3',name:"Koeman",team:"Barcelona",season:'1993/94',position:'CB',altPositions:[],rating:86,tier:'Elite'},
+{id:'barca_9394_4',name:"Bakero",team:"Barcelona",season:'1993/94',position:'CM',altPositions:[],rating:83,tier:'Starter'},
+{id:'barca_9394_f1',name:"Martins",team:"Barcelona",season:'1993/94',position:'GK',altPositions:[],rating:78,tier:'Starter'},
+{id:'barca_9394_f2',name:"Costa",team:"Barcelona",season:'1993/94',position:'CB',altPositions:[],rating:75,tier:'Rotation'},
+{id:'barca_9394_f3',name:"Silva",team:"Barcelona",season:'1993/94',position:'LB',altPositions:[],rating:76,tier:'Starter'},
+{id:'barca_9394_f4',name:"Novak",team:"Barcelona",season:'1993/94',position:'RB',altPositions:[],rating:76,tier:'Starter'},
+{id:'barca_9394_f5',name:"Keller",team:"Barcelona",season:'1993/94',position:'CAM',altPositions:[],rating:76,tier:'Starter'},
+{id:'barca_9394_f6',name:"Hayes",team:"Barcelona",season:'1993/94',position:'LW',altPositions:[],rating:78,tier:'Starter'},
+{id:'rm_0102_0',name:"Zidane",team:"Real Madrid",season:'2001/02',position:'CAM',altPositions:[],rating:93,tier:'Legend'},
+{id:'rm_0102_1',name:"Figo",team:"Real Madrid",season:'2001/02',position:'RW',altPositions:[],rating:90,tier:'Legend'},
+{id:'rm_0102_2',name:"Raul",team:"Real Madrid",season:'2001/02',position:'ST',altPositions:[],rating:89,tier:'Elite'},
+{id:'rm_0102_3',name:"Roberto Carlos",team:"Real Madrid",season:'2001/02',position:'LB',altPositions:[],rating:88,tier:'Elite'},
+{id:'rm_0102_4',name:"Casillas",team:"Real Madrid",season:'2001/02',position:'GK',altPositions:[],rating:86,tier:'Elite'},
+{id:'rm_0102_f1',name:"Martins",team:"Real Madrid",season:'2001/02',position:'CB',altPositions:[],rating:79,tier:'Starter'},
+{id:'rm_0102_f2',name:"Costa",team:"Real Madrid",season:'2001/02',position:'CB',altPositions:[],rating:79,tier:'Starter'},
+{id:'rm_0102_f3',name:"Silva",team:"Real Madrid",season:'2001/02',position:'RB',altPositions:[],rating:80,tier:'Starter'},
+{id:'rm_0102_f4',name:"Novak",team:"Real Madrid",season:'2001/02',position:'CDM',altPositions:[],rating:79,tier:'Starter'},
+{id:'rm_0102_f5',name:"Keller",team:"Real Madrid",season:'2001/02',position:'CM',altPositions:[],rating:79,tier:'Starter'},
+{id:'rm_0102_f6',name:"Hayes",team:"Real Madrid",season:'2001/02',position:'LW',altPositions:[],rating:78,tier:'Starter'},
+{id:'acmilan_0405_0',name:"Kaka",team:"AC Milan",season:'2004/05',position:'CAM',altPositions:[],rating:90,tier:'Legend'},
+{id:'acmilan_0405_1',name:"Shevchenko",team:"AC Milan",season:'2004/05',position:'ST',altPositions:[],rating:90,tier:'Legend'},
+{id:'acmilan_0405_2',name:"Pirlo",team:"AC Milan",season:'2004/05',position:'CM',altPositions:[],rating:89,tier:'Elite'},
+{id:'acmilan_0405_3',name:"Nesta",team:"AC Milan",season:'2004/05',position:'CB',altPositions:[],rating:89,tier:'Elite'},
+{id:'acmilan_0405_4',name:"Maldini",team:"AC Milan",season:'2004/05',position:'LB',altPositions:[],rating:87,tier:'Elite'},
+{id:'acmilan_0405_f1',name:"Martins",team:"AC Milan",season:'2004/05',position:'GK',altPositions:[],rating:80,tier:'Starter'},
+{id:'acmilan_0405_f2',name:"Costa",team:"AC Milan",season:'2004/05',position:'CB',altPositions:[],rating:78,tier:'Starter'},
+{id:'acmilan_0405_f3',name:"Silva",team:"AC Milan",season:'2004/05',position:'RB',altPositions:[],rating:79,tier:'Starter'},
+{id:'acmilan_0405_f4',name:"Novak",team:"AC Milan",season:'2004/05',position:'CDM',altPositions:[],rating:81,tier:'Starter'},
+{id:'acmilan_0405_f5',name:"Keller",team:"AC Milan",season:'2004/05',position:'LW',altPositions:[],rating:81,tier:'Starter'},
+{id:'acmilan_0405_f6',name:"Hayes",team:"AC Milan",season:'2004/05',position:'RW',altPositions:[],rating:79,tier:'Starter'},
+{id:'liverpool_0001_0',name:"Owen",team:"Liverpool",season:'2000/01',position:'ST',altPositions:[],rating:87,tier:'Elite'},
+{id:'liverpool_0001_1',name:"Gerrard",team:"Liverpool",season:'2000/01',position:'CM',altPositions:[],rating:86,tier:'Elite'},
+{id:'liverpool_0001_2',name:"Heskey",team:"Liverpool",season:'2000/01',position:'ST',altPositions:[],rating:82,tier:'Starter'},
+{id:'liverpool_0001_3',name:"Hyypia",team:"Liverpool",season:'2000/01',position:'CB',altPositions:[],rating:84,tier:'Elite'},
+{id:'liverpool_0001_4',name:"Westerveld",team:"Liverpool",season:'2000/01',position:'GK',altPositions:[],rating:80,tier:'Starter'},
+{id:'liverpool_0001_f1',name:"Martins",team:"Liverpool",season:'2000/01',position:'CB',altPositions:[],rating:76,tier:'Starter'},
+{id:'liverpool_0001_f2',name:"Costa",team:"Liverpool",season:'2000/01',position:'LB',altPositions:[],rating:76,tier:'Starter'},
+{id:'liverpool_0001_f3',name:"Silva",team:"Liverpool",season:'2000/01',position:'RB',altPositions:[],rating:76,tier:'Starter'},
+{id:'liverpool_0001_f4',name:"Novak",team:"Liverpool",season:'2000/01',position:'CDM',altPositions:[],rating:76,tier:'Starter'},
+{id:'liverpool_0001_f5',name:"Keller",team:"Liverpool",season:'2000/01',position:'CAM',altPositions:[],rating:77,tier:'Starter'},
+{id:'liverpool_0001_f6',name:"Hayes",team:"Liverpool",season:'2000/01',position:'LW',altPositions:[],rating:75,tier:'Rotation'},
+{id:'liverpool_0001_f7',name:"Brunet",team:"Liverpool",season:'2000/01',position:'RW',altPositions:[],rating:74,tier:'Rotation'},
+{id:'chelsea_0405_0',name:"Lampard",team:"Chelsea",season:'2004/05',position:'CM',altPositions:[],rating:89,tier:'Elite'},
+{id:'chelsea_0405_1',name:"Terry",team:"Chelsea",season:'2004/05',position:'CB',altPositions:[],rating:88,tier:'Elite'},
+{id:'chelsea_0405_2',name:"Cech",team:"Chelsea",season:'2004/05',position:'GK',altPositions:[],rating:89,tier:'Elite'},
+{id:'chelsea_0405_3',name:"Drogba",team:"Chelsea",season:'2004/05',position:'ST',altPositions:[],rating:87,tier:'Elite'},
+{id:'chelsea_0405_4',name:"Makelele",team:"Chelsea",season:'2004/05',position:'CDM',altPositions:[],rating:86,tier:'Elite'},
+{id:'chelsea_0405_f1',name:"Martins",team:"Chelsea",season:'2004/05',position:'CB',altPositions:[],rating:79,tier:'Starter'},
+{id:'chelsea_0405_f2',name:"Costa",team:"Chelsea",season:'2004/05',position:'LB',altPositions:[],rating:80,tier:'Starter'},
+{id:'chelsea_0405_f3',name:"Silva",team:"Chelsea",season:'2004/05',position:'RB',altPositions:[],rating:81,tier:'Starter'},
+{id:'chelsea_0405_f4',name:"Novak",team:"Chelsea",season:'2004/05',position:'CAM',altPositions:[],rating:78,tier:'Starter'},
+{id:'chelsea_0405_f5',name:"Keller",team:"Chelsea",season:'2004/05',position:'LW',altPositions:[],rating:78,tier:'Starter'},
+{id:'chelsea_0405_f6',name:"Hayes",team:"Chelsea",season:'2004/05',position:'RW',altPositions:[],rating:79,tier:'Starter'},
+{id:'depor_0304_0',name:"Valeron",team:"Deportivo La Coruña",season:'2003/04',position:'CAM',altPositions:[],rating:85,tier:'Elite'},
+{id:'depor_0304_1',name:"Tristan",team:"Deportivo La Coruña",season:'2003/04',position:'ST',altPositions:[],rating:82,tier:'Starter'},
+{id:'depor_0304_2',name:"Pandiani",team:"Deportivo La Coruña",season:'2003/04',position:'ST',altPositions:[],rating:81,tier:'Starter'},
+{id:'depor_0304_3',name:"Naybet",team:"Deportivo La Coruña",season:'2003/04',position:'CB',altPositions:[],rating:82,tier:'Starter'},
+{id:'depor_0304_4',name:"Molina",team:"Deportivo La Coruña",season:'2003/04',position:'GK',altPositions:[],rating:80,tier:'Starter'},
+{id:'depor_0304_f1',name:"Martins",team:"Deportivo La Coruña",season:'2003/04',position:'CB',altPositions:[],rating:72,tier:'Rotation'},
+{id:'depor_0304_f2',name:"Costa",team:"Deportivo La Coruña",season:'2003/04',position:'LB',altPositions:[],rating:73,tier:'Rotation'},
+{id:'depor_0304_f3',name:"Silva",team:"Deportivo La Coruña",season:'2003/04',position:'RB',altPositions:[],rating:74,tier:'Rotation'},
+{id:'depor_0304_f4',name:"Novak",team:"Deportivo La Coruña",season:'2003/04',position:'CDM',altPositions:[],rating:73,tier:'Rotation'},
+{id:'depor_0304_f5',name:"Keller",team:"Deportivo La Coruña",season:'2003/04',position:'CM',altPositions:[],rating:71,tier:'Rotation'},
+{id:'depor_0304_f6',name:"Hayes",team:"Deportivo La Coruña",season:'2003/04',position:'LW',altPositions:[],rating:72,tier:'Rotation'},
+{id:'depor_0304_f7',name:"Brunet",team:"Deportivo La Coruña",season:'2003/04',position:'RW',altPositions:[],rating:74,tier:'Rotation'},
+{id:'bayern_0001_0',name:"Kahn",team:"Bayern Munich",season:'2000/01',position:'GK',altPositions:[],rating:90,tier:'Legend'},
+{id:'bayern_0001_1',name:"Effenberg",team:"Bayern Munich",season:'2000/01',position:'CM',altPositions:[],rating:86,tier:'Elite'},
+{id:'bayern_0001_2',name:"Elber",team:"Bayern Munich",season:'2000/01',position:'ST',altPositions:[],rating:84,tier:'Elite'},
+{id:'bayern_0001_3',name:"Lizarazu",team:"Bayern Munich",season:'2000/01',position:'LB',altPositions:[],rating:84,tier:'Elite'},
+{id:'bayern_0001_4',name:"Scholl",team:"Bayern Munich",season:'2000/01',position:'CAM',altPositions:[],rating:83,tier:'Starter'},
+{id:'bayern_0001_f1',name:"Martins",team:"Bayern Munich",season:'2000/01',position:'CB',altPositions:[],rating:75,tier:'Rotation'},
+{id:'bayern_0001_f2',name:"Costa",team:"Bayern Munich",season:'2000/01',position:'CB',altPositions:[],rating:77,tier:'Starter'},
+{id:'bayern_0001_f3',name:"Silva",team:"Bayern Munich",season:'2000/01',position:'RB',altPositions:[],rating:78,tier:'Starter'},
+{id:'bayern_0001_f4',name:"Novak",team:"Bayern Munich",season:'2000/01',position:'CDM',altPositions:[],rating:76,tier:'Starter'},
+{id:'bayern_0001_f5',name:"Keller",team:"Bayern Munich",season:'2000/01',position:'LW',altPositions:[],rating:78,tier:'Starter'},
+{id:'bayern_0001_f6',name:"Hayes",team:"Bayern Munich",season:'2000/01',position:'RW',altPositions:[],rating:77,tier:'Starter'},
+{id:'psg_1516_0',name:"Ibrahimovic",team:"PSG",season:'2015/16',position:'ST',altPositions:[],rating:91,tier:'Legend'},
+{id:'psg_1516_1',name:"Cavani",team:"PSG",season:'2015/16',position:'ST',altPositions:[],rating:87,tier:'Elite'},
+{id:'psg_1516_2',name:"Verratti",team:"PSG",season:'2015/16',position:'CM',altPositions:[],rating:86,tier:'Elite'},
+{id:'psg_1516_3',name:"Thiago Silva",team:"PSG",season:'2015/16',position:'CB',altPositions:[],rating:87,tier:'Elite'},
+{id:'psg_1516_4',name:"Di Maria",team:"PSG",season:'2015/16',position:'RW',altPositions:[],rating:86,tier:'Elite'},
+{id:'psg_1516_f1',name:"Martins",team:"PSG",season:'2015/16',position:'GK',altPositions:[],rating:76,tier:'Starter'},
+{id:'psg_1516_f2',name:"Costa",team:"PSG",season:'2015/16',position:'CB',altPositions:[],rating:78,tier:'Starter'},
+{id:'psg_1516_f3',name:"Silva",team:"PSG",season:'2015/16',position:'LB',altPositions:[],rating:78,tier:'Starter'},
+{id:'psg_1516_f4',name:"Novak",team:"PSG",season:'2015/16',position:'RB',altPositions:[],rating:76,tier:'Starter'},
+{id:'psg_1516_f5',name:"Keller",team:"PSG",season:'2015/16',position:'CDM',altPositions:[],rating:76,tier:'Starter'},
+{id:'psg_1516_f6',name:"Hayes",team:"PSG",season:'2015/16',position:'CAM',altPositions:[],rating:78,tier:'Starter'},
+{id:'psg_1516_f7',name:"Brunet",team:"PSG",season:'2015/16',position:'LW',altPositions:[],rating:76,tier:'Starter'},
+{id:'liverpool_1718_0',name:"Salah",team:"Liverpool",season:'2017/18',position:'RW',altPositions:[],rating:90,tier:'Legend'},
+{id:'liverpool_1718_1',name:"Mane",team:"Liverpool",season:'2017/18',position:'LW',altPositions:[],rating:88,tier:'Elite'},
+{id:'liverpool_1718_2',name:"Firmino",team:"Liverpool",season:'2017/18',position:'ST',altPositions:[],rating:86,tier:'Elite'},
+{id:'liverpool_1718_3',name:"Van Dijk",team:"Liverpool",season:'2017/18',position:'CB',altPositions:[],rating:88,tier:'Elite'},
+{id:'liverpool_1718_4',name:"Henderson",team:"Liverpool",season:'2017/18',position:'CM',altPositions:[],rating:82,tier:'Starter'},
+{id:'liverpool_1718_f1',name:"Martins",team:"Liverpool",season:'2017/18',position:'GK',altPositions:[],rating:75,tier:'Rotation'},
+{id:'liverpool_1718_f2',name:"Costa",team:"Liverpool",season:'2017/18',position:'CB',altPositions:[],rating:76,tier:'Starter'},
+{id:'liverpool_1718_f3',name:"Silva",team:"Liverpool",season:'2017/18',position:'LB',altPositions:[],rating:78,tier:'Starter'},
+{id:'liverpool_1718_f4',name:"Novak",team:"Liverpool",season:'2017/18',position:'RB',altPositions:[],rating:76,tier:'Starter'},
+{id:'liverpool_1718_f5',name:"Keller",team:"Liverpool",season:'2017/18',position:'CDM',altPositions:[],rating:75,tier:'Rotation'},
+{id:'liverpool_1718_f6',name:"Hayes",team:"Liverpool",season:'2017/18',position:'CAM',altPositions:[],rating:77,tier:'Starter'},
+{id:'rm_2122_0',name:"Benzema",team:"Real Madrid",season:'2021/22',position:'ST',altPositions:[],rating:91,tier:'Legend'},
+{id:'rm_2122_1',name:"Modric",team:"Real Madrid",season:'2021/22',position:'CM',altPositions:[],rating:87,tier:'Elite'},
+{id:'rm_2122_2',name:"Courtois",team:"Real Madrid",season:'2021/22',position:'GK',altPositions:[],rating:90,tier:'Legend'},
+{id:'rm_2122_3',name:"Kroos",team:"Real Madrid",season:'2021/22',position:'CM',altPositions:[],rating:87,tier:'Elite'},
+{id:'rm_2122_4',name:"Vinicius",team:"Real Madrid",season:'2021/22',position:'LW',altPositions:[],rating:87,tier:'Elite'},
+{id:'rm_2122_f1',name:"Martins",team:"Real Madrid",season:'2021/22',position:'CB',altPositions:[],rating:79,tier:'Starter'},
+{id:'rm_2122_f2',name:"Costa",team:"Real Madrid",season:'2021/22',position:'CB',altPositions:[],rating:78,tier:'Starter'},
+{id:'rm_2122_f3',name:"Silva",team:"Real Madrid",season:'2021/22',position:'LB',altPositions:[],rating:78,tier:'Starter'},
+{id:'rm_2122_f4',name:"Novak",team:"Real Madrid",season:'2021/22',position:'RB',altPositions:[],rating:79,tier:'Starter'},
+{id:'rm_2122_f5',name:"Keller",team:"Real Madrid",season:'2021/22',position:'CDM',altPositions:[],rating:79,tier:'Starter'},
+{id:'rm_2122_f6',name:"Hayes",team:"Real Madrid",season:'2021/22',position:'CAM',altPositions:[],rating:80,tier:'Starter'},
+{id:'rm_2122_f7',name:"Brunet",team:"Real Madrid",season:'2021/22',position:'RW',altPositions:[],rating:77,tier:'Starter'},
+{id:'liverpool_2122_0',name:"Salah",team:"Liverpool",season:'2021/22',position:'RW',altPositions:[],rating:92,tier:'Legend'},
+{id:'liverpool_2122_1',name:"Van Dijk",team:"Liverpool",season:'2021/22',position:'CB',altPositions:[],rating:89,tier:'Elite'},
+{id:'liverpool_2122_2',name:"Alisson",team:"Liverpool",season:'2021/22',position:'GK',altPositions:[],rating:88,tier:'Elite'},
+{id:'liverpool_2122_3',name:"Trent Alexander-Arnold",team:"Liverpool",season:'2021/22',position:'RB',altPositions:[],rating:87,tier:'Elite'},
+{id:'liverpool_2122_4',name:"Mane",team:"Liverpool",season:'2021/22',position:'LW',altPositions:[],rating:88,tier:'Elite'},
+{id:'liverpool_2122_f1',name:"Martins",team:"Liverpool",season:'2021/22',position:'CB',altPositions:[],rating:80,tier:'Starter'},
+{id:'liverpool_2122_f2',name:"Costa",team:"Liverpool",season:'2021/22',position:'LB',altPositions:[],rating:81,tier:'Starter'},
+{id:'liverpool_2122_f3',name:"Silva",team:"Liverpool",season:'2021/22',position:'CDM',altPositions:[],rating:79,tier:'Starter'},
+{id:'liverpool_2122_f4',name:"Novak",team:"Liverpool",season:'2021/22',position:'CM',altPositions:[],rating:80,tier:'Starter'},
+{id:'liverpool_2122_f5',name:"Keller",team:"Liverpool",season:'2021/22',position:'CAM',altPositions:[],rating:78,tier:'Starter'},
+{id:'liverpool_2122_f6',name:"Hayes",team:"Liverpool",season:'2021/22',position:'ST',altPositions:[],rating:80,tier:'Starter'},
+{id:'mancity_2324_0',name:"Haaland",team:"Man City",season:'2023/24',position:'ST',altPositions:[],rating:92,tier:'Legend'},
+{id:'mancity_2324_1',name:"De Bruyne",team:"Man City",season:'2023/24',position:'CAM',altPositions:[],rating:91,tier:'Legend'},
+{id:'mancity_2324_2',name:"Rodri",team:"Man City",season:'2023/24',position:'CDM',altPositions:[],rating:90,tier:'Legend'},
+{id:'mancity_2324_3',name:"Foden",team:"Man City",season:'2023/24',position:'CAM',altPositions:[],rating:88,tier:'Elite'},
+{id:'mancity_2324_4',name:"Ederson",team:"Man City",season:'2023/24',position:'GK',altPositions:[],rating:87,tier:'Elite'},
+{id:'mancity_2324_f1',name:"Martins",team:"Man City",season:'2023/24',position:'CB',altPositions:[],rating:83,tier:'Starter'},
+{id:'mancity_2324_f2',name:"Costa",team:"Man City",season:'2023/24',position:'CB',altPositions:[],rating:82,tier:'Starter'},
+{id:'mancity_2324_f3',name:"Silva",team:"Man City",season:'2023/24',position:'LB',altPositions:[],rating:82,tier:'Starter'},
+{id:'mancity_2324_f4',name:"Novak",team:"Man City",season:'2023/24',position:'RB',altPositions:[],rating:83,tier:'Starter'},
+{id:'mancity_2324_f5',name:"Keller",team:"Man City",season:'2023/24',position:'CM',altPositions:[],rating:84,tier:'Elite'},
+{id:'mancity_2324_f6',name:"Hayes",team:"Man City",season:'2023/24',position:'LW',altPositions:[],rating:81,tier:'Starter'},
+{id:'mancity_2324_f7',name:"Brunet",team:"Man City",season:'2023/24',position:'RW',altPositions:[],rating:83,tier:'Starter'},
+{id:'rm_2324_0',name:"Bellingham",team:"Real Madrid",season:'2023/24',position:'CAM',altPositions:[],rating:90,tier:'Legend'},
+{id:'rm_2324_1',name:"Vinicius",team:"Real Madrid",season:'2023/24',position:'LW',altPositions:[],rating:90,tier:'Legend'},
+{id:'rm_2324_2',name:"Modric",team:"Real Madrid",season:'2023/24',position:'CM',altPositions:[],rating:85,tier:'Elite'},
+{id:'rm_2324_3',name:"Rudiger",team:"Real Madrid",season:'2023/24',position:'CB',altPositions:[],rating:87,tier:'Elite'},
+{id:'rm_2324_4',name:"Courtois",team:"Real Madrid",season:'2023/24',position:'GK',altPositions:[],rating:89,tier:'Elite'},
+{id:'rm_2324_f1',name:"Martins",team:"Real Madrid",season:'2023/24',position:'CB',altPositions:[],rating:82,tier:'Starter'},
+{id:'rm_2324_f2',name:"Costa",team:"Real Madrid",season:'2023/24',position:'LB',altPositions:[],rating:80,tier:'Starter'},
+{id:'rm_2324_f3',name:"Silva",team:"Real Madrid",season:'2023/24',position:'RB',altPositions:[],rating:83,tier:'Starter'},
+{id:'rm_2324_f4',name:"Novak",team:"Real Madrid",season:'2023/24',position:'CDM',altPositions:[],rating:83,tier:'Starter'},
+{id:'rm_2324_f5',name:"Keller",team:"Real Madrid",season:'2023/24',position:'RW',altPositions:[],rating:80,tier:'Starter'},
+{id:'rm_2324_f6',name:"Hayes",team:"Real Madrid",season:'2023/24',position:'ST',altPositions:[],rating:81,tier:'Starter'},
+{id:'psg_1920_0',name:"Mbappe",team:"PSG",season:'2019/20',position:'ST',altPositions:[],rating:90,tier:'Legend'},
+{id:'psg_1920_1',name:"Neymar",team:"PSG",season:'2019/20',position:'LW',altPositions:[],rating:91,tier:'Legend'},
+{id:'psg_1920_2',name:"Di Maria",team:"PSG",season:'2019/20',position:'RW',altPositions:[],rating:85,tier:'Elite'},
+{id:'psg_1920_3',name:"Marquinhos",team:"PSG",season:'2019/20',position:'CB',altPositions:[],rating:86,tier:'Elite'},
+{id:'psg_1920_4',name:"Verratti",team:"PSG",season:'2019/20',position:'CM',altPositions:[],rating:86,tier:'Elite'},
+{id:'psg_1920_f1',name:"Martins",team:"PSG",season:'2019/20',position:'GK',altPositions:[],rating:77,tier:'Starter'},
+{id:'psg_1920_f2',name:"Costa",team:"PSG",season:'2019/20',position:'CB',altPositions:[],rating:78,tier:'Starter'},
+{id:'psg_1920_f3',name:"Silva",team:"PSG",season:'2019/20',position:'LB',altPositions:[],rating:79,tier:'Starter'},
+{id:'psg_1920_f4',name:"Novak",team:"PSG",season:'2019/20',position:'RB',altPositions:[],rating:80,tier:'Starter'},
+{id:'psg_1920_f5',name:"Keller",team:"PSG",season:'2019/20',position:'CDM',altPositions:[],rating:77,tier:'Starter'},
+{id:'psg_1920_f6',name:"Hayes",team:"PSG",season:'2019/20',position:'CAM',altPositions:[],rating:77,tier:'Starter'},
+{id:'bayern_2223_0',name:"Kimmich",team:"Bayern Munich",season:'2022/23',position:'CDM',altPositions:[],rating:88,tier:'Elite'},
+{id:'bayern_2223_1',name:"Musiala",team:"Bayern Munich",season:'2022/23',position:'CAM',altPositions:[],rating:87,tier:'Elite'},
+{id:'bayern_2223_2',name:"Neuer",team:"Bayern Munich",season:'2022/23',position:'GK',altPositions:[],rating:88,tier:'Elite'},
+{id:'bayern_2223_3',name:"Sane",team:"Bayern Munich",season:'2022/23',position:'RW',altPositions:[],rating:85,tier:'Elite'},
+{id:'bayern_2223_4',name:"Gnabry",team:"Bayern Munich",season:'2022/23',position:'LW',altPositions:[],rating:85,tier:'Elite'},
+{id:'bayern_2223_f1',name:"Martins",team:"Bayern Munich",season:'2022/23',position:'CB',altPositions:[],rating:80,tier:'Starter'},
+{id:'bayern_2223_f2',name:"Costa",team:"Bayern Munich",season:'2022/23',position:'CB',altPositions:[],rating:78,tier:'Starter'},
+{id:'bayern_2223_f3',name:"Silva",team:"Bayern Munich",season:'2022/23',position:'LB',altPositions:[],rating:81,tier:'Starter'},
+{id:'bayern_2223_f4',name:"Novak",team:"Bayern Munich",season:'2022/23',position:'RB',altPositions:[],rating:78,tier:'Starter'},
+{id:'bayern_2223_f5',name:"Keller",team:"Bayern Munich",season:'2022/23',position:'CM',altPositions:[],rating:81,tier:'Starter'},
+{id:'bayern_2223_f6',name:"Hayes",team:"Bayern Munich",season:'2022/23',position:'ST',altPositions:[],rating:79,tier:'Starter'},
+{id:'inter_2223_0',name:"Lautaro Martinez",team:"Inter Milan",season:'2022/23',position:'ST',altPositions:[],rating:87,tier:'Elite'},
+{id:'inter_2223_1',name:"Barella",team:"Inter Milan",season:'2022/23',position:'CM',altPositions:[],rating:86,tier:'Elite'},
+{id:'inter_2223_2',name:"Bastoni",team:"Inter Milan",season:'2022/23',position:'CB',altPositions:[],rating:86,tier:'Elite'},
+{id:'inter_2223_3',name:"Brozovic",team:"Inter Milan",season:'2022/23',position:'CDM',altPositions:[],rating:85,tier:'Elite'},
+{id:'inter_2223_4',name:"Onana",team:"Inter Milan",season:'2022/23',position:'GK',altPositions:[],rating:83,tier:'Starter'},
+{id:'inter_2223_f1',name:"Martins",team:"Inter Milan",season:'2022/23',position:'CB',altPositions:[],rating:78,tier:'Starter'},
+{id:'inter_2223_f2',name:"Costa",team:"Inter Milan",season:'2022/23',position:'LB',altPositions:[],rating:79,tier:'Starter'},
+{id:'inter_2223_f3',name:"Silva",team:"Inter Milan",season:'2022/23',position:'RB',altPositions:[],rating:77,tier:'Starter'},
+{id:'inter_2223_f4',name:"Novak",team:"Inter Milan",season:'2022/23',position:'CAM',altPositions:[],rating:79,tier:'Starter'},
+{id:'inter_2223_f5',name:"Keller",team:"Inter Milan",season:'2022/23',position:'LW',altPositions:[],rating:79,tier:'Starter'},
+{id:'inter_2223_f6',name:"Hayes",team:"Inter Milan",season:'2022/23',position:'RW',altPositions:[],rating:76,tier:'Starter'},
+{id:'atletico_2021_0',name:"Suarez",team:"Atletico Madrid",season:'2020/21',position:'ST',altPositions:[],rating:86,tier:'Elite'},
+{id:'atletico_2021_1',name:"Koke",team:"Atletico Madrid",season:'2020/21',position:'CM',altPositions:[],rating:84,tier:'Elite'},
+{id:'atletico_2021_2',name:"Oblak",team:"Atletico Madrid",season:'2020/21',position:'GK',altPositions:[],rating:90,tier:'Legend'},
+{id:'atletico_2021_3',name:"Felipe",team:"Atletico Madrid",season:'2020/21',position:'CB',altPositions:[],rating:83,tier:'Starter'},
+{id:'atletico_2021_4',name:"Llorente",team:"Atletico Madrid",season:'2020/21',position:'RB',altPositions:[],rating:81,tier:'Starter'},
+{id:'atletico_2021_f1',name:"Martins",team:"Atletico Madrid",season:'2020/21',position:'CB',altPositions:[],rating:77,tier:'Starter'},
+{id:'atletico_2021_f2',name:"Costa",team:"Atletico Madrid",season:'2020/21',position:'LB',altPositions:[],rating:77,tier:'Starter'},
+{id:'atletico_2021_f3',name:"Silva",team:"Atletico Madrid",season:'2020/21',position:'CDM',altPositions:[],rating:76,tier:'Starter'},
+{id:'atletico_2021_f4',name:"Novak",team:"Atletico Madrid",season:'2020/21',position:'CAM',altPositions:[],rating:79,tier:'Starter'},
+{id:'atletico_2021_f5',name:"Keller",team:"Atletico Madrid",season:'2020/21',position:'LW',altPositions:[],rating:76,tier:'Starter'},
+{id:'atletico_2021_f6',name:"Hayes",team:"Atletico Madrid",season:'2020/21',position:'RW',altPositions:[],rating:78,tier:'Starter'},
+{id:'bvb_2324_0',name:"Fullkrug",team:"Borussia Dortmund",season:'2023/24',position:'ST',altPositions:[],rating:83,tier:'Starter'},
+{id:'bvb_2324_1',name:"Sancho",team:"Borussia Dortmund",season:'2023/24',position:'RW',altPositions:[],rating:83,tier:'Starter'},
+{id:'bvb_2324_2',name:"Hummels",team:"Borussia Dortmund",season:'2023/24',position:'CB',altPositions:[],rating:83,tier:'Starter'},
+{id:'bvb_2324_3',name:"Sabitzer",team:"Borussia Dortmund",season:'2023/24',position:'CM',altPositions:[],rating:82,tier:'Starter'},
+{id:'bvb_2324_4',name:"Kobel",team:"Borussia Dortmund",season:'2023/24',position:'GK',altPositions:[],rating:83,tier:'Starter'},
+{id:'bvb_2324_f1',name:"Martins",team:"Borussia Dortmund",season:'2023/24',position:'CB',altPositions:[],rating:74,tier:'Rotation'},
+{id:'bvb_2324_f2',name:"Costa",team:"Borussia Dortmund",season:'2023/24',position:'LB',altPositions:[],rating:73,tier:'Rotation'},
+{id:'bvb_2324_f3',name:"Silva",team:"Borussia Dortmund",season:'2023/24',position:'RB',altPositions:[],rating:74,tier:'Rotation'},
+{id:'bvb_2324_f4',name:"Novak",team:"Borussia Dortmund",season:'2023/24',position:'CDM',altPositions:[],rating:74,tier:'Rotation'},
+{id:'bvb_2324_f5',name:"Keller",team:"Borussia Dortmund",season:'2023/24',position:'CAM',altPositions:[],rating:73,tier:'Rotation'},
+{id:'bvb_2324_f6',name:"Hayes",team:"Borussia Dortmund",season:'2023/24',position:'LW',altPositions:[],rating:73,tier:'Rotation'},
+{id:'mancity_2021_0',name:"De Bruyne",team:"Man City",season:'2020/21',position:'CAM',altPositions:[],rating:90,tier:'Legend'},
+{id:'mancity_2021_1',name:"Sterling",team:"Man City",season:'2020/21',position:'LW',altPositions:[],rating:86,tier:'Elite'},
+{id:'mancity_2021_2',name:"Ederson",team:"Man City",season:'2020/21',position:'GK',altPositions:[],rating:85,tier:'Elite'},
+{id:'mancity_2021_3',name:"Dias",team:"Man City",season:'2020/21',position:'CB',altPositions:[],rating:87,tier:'Elite'},
+{id:'mancity_2021_4',name:"Foden",team:"Man City",season:'2020/21',position:'CAM',altPositions:[],rating:85,tier:'Elite'},
+{id:'mancity_2021_f1',name:"Martins",team:"Man City",season:'2020/21',position:'CB',altPositions:[],rating:78,tier:'Starter'},
+{id:'mancity_2021_f2',name:"Costa",team:"Man City",season:'2020/21',position:'LB',altPositions:[],rating:78,tier:'Starter'},
+{id:'mancity_2021_f3',name:"Silva",team:"Man City",season:'2020/21',position:'RB',altPositions:[],rating:79,tier:'Starter'},
+{id:'mancity_2021_f4',name:"Novak",team:"Man City",season:'2020/21',position:'CDM',altPositions:[],rating:81,tier:'Starter'},
+{id:'mancity_2021_f5',name:"Keller",team:"Man City",season:'2020/21',position:'CM',altPositions:[],rating:78,tier:'Starter'},
+{id:'mancity_2021_f6',name:"Hayes",team:"Man City",season:'2020/21',position:'RW',altPositions:[],rating:78,tier:'Starter'},
+{id:'mancity_2021_f7',name:"Brunet",team:"Man City",season:'2020/21',position:'ST',altPositions:[],rating:78,tier:'Starter'},
 // ── BARCELONA 2008/09 ──
 {id:'valdes_b0809',name:'Victor Valdes',team:'Barcelona',season:'2008/09',position:'GK',altPositions:[],rating:82,tier:'Elite'},
 {id:'alves_b0809',name:'Dani Alves',team:'Barcelona',season:'2008/09',position:'RB',altPositions:[],rating:90,tier:'Legend'},
